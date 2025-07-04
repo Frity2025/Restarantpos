@@ -1,3 +1,7 @@
+export type WaitlistPriority = "normal" | "high" | "vip" | "elderly" | "disabled"
+
+export type WaitlistStatus = "waiting" | "notified" | "ready" | "seated" | "cancelled" | "no-show"
+
 export interface WaitlistEntry {
   id: string
   customerName: string
@@ -5,45 +9,48 @@ export interface WaitlistEntry {
   customerEmail?: string
   partySize: number
   priority: WaitlistPriority
-  status: WaitlistStatus
   estimatedWaitTime: number
-  actualWaitTime?: number
+  actualWaitTime: number
+  status: WaitlistStatus
+  tablePreference?: "indoor" | "outdoor" | "any"
   specialRequests?: string
-  createdAt: Date
-  updatedAt: Date
-  notifiedAt?: Date
-  seatedAt?: Date
-  tableAssigned?: string
+  notificationPreferences: {
+    sms: boolean
+    call: boolean
+  }
+  location?: {
+    latitude: number
+    longitude: number
+    address: string
+  }
+  joinedAt: Date
+  seatedAt: Date | null
   createdBy: string
+  updatedAt: Date
+  createdAt: Date
+  assignedTable?: string
+  cancelReason?: string
+  notificationHistory?: Array<{
+    type: "sms" | "call"
+    message: string
+    sentAt: Date
+    status: "sent" | "failed"
+  }>
 }
-
-export type WaitlistPriority = "normal" | "high" | "vip" | "elderly" | "disabled"
-
-export type WaitlistStatus = "waiting" | "notified" | "ready" | "seated" | "cancelled" | "no-show"
 
 export interface WaitlistStats {
   totalWaiting: number
-  totalNotified: number
-  totalSeatedToday: number
-  totalCancelledToday: number
-  totalNoShowToday: number
   averageWaitTime: number
-  longestWaitTime: number
+  totalSeatedToday: number
   noShowRate: number
-  priorityBreakdown: {
-    normal: number
-    high: number
-    vip: number
-    elderly: number
-    disabled: number
-  }
 }
 
-export interface WaitlistNotification {
-  id: string
-  entryId: string
-  type: "sms" | "call" | "email"
-  message: string
-  sentAt: Date
-  status: "pending" | "sent" | "failed"
+export interface WaitlistFilters {
+  status?: WaitlistStatus
+  priority?: WaitlistPriority
+  partySize?: number
+  dateRange?: {
+    start: Date
+    end: Date
+  }
 }

@@ -1,4 +1,4 @@
-import type { WaitlistEntry, WaitlistStats, WaitlistFilters } from "@/types/waitlist"
+import type { WaitlistEntry, WaitlistStats, WaitlistFilters, WaitlistPriority } from "@/types/waitlist"
 
 // Sample waitlist data
 const waitlistEntries: WaitlistEntry[] = [
@@ -6,6 +6,7 @@ const waitlistEntries: WaitlistEntry[] = [
     id: "wait-001",
     customerName: "አህመድ አሊ",
     customerPhone: "+251911123456",
+    customerEmail: "ahmed@email.com",
     partySize: 4,
     priority: "normal",
     estimatedWaitTime: 25,
@@ -26,11 +27,13 @@ const waitlistEntries: WaitlistEntry[] = [
     seatedAt: null,
     createdBy: "host-001",
     updatedAt: new Date("2024-01-07T10:30:00"),
+    createdAt: new Date("2024-01-07T10:30:00"),
   },
   {
     id: "wait-002",
     customerName: "ፋጢማ ሙሳ",
     customerPhone: "+251922234567",
+    customerEmail: "fatima@email.com",
     partySize: 2,
     priority: "high",
     estimatedWaitTime: 15,
@@ -51,6 +54,7 @@ const waitlistEntries: WaitlistEntry[] = [
     seatedAt: null,
     createdBy: "host-001",
     updatedAt: new Date("2024-01-07T11:00:00"),
+    createdAt: new Date("2024-01-07T11:00:00"),
   },
 ]
 
@@ -58,7 +62,7 @@ class WaitlistService {
   private notificationQueue: Array<{ entryId: string; type: string }> = []
 
   // Get all waitlist entries
-  async getWaitlistEntries(filters?: WaitlistFilters): Promise<WaitlistEntry[]> {
+  getAllWaitlistEntries(filters?: WaitlistFilters): WaitlistEntry[] {
     let filtered = [...waitlistEntries]
 
     if (filters?.status) {
@@ -83,7 +87,25 @@ class WaitlistService {
 
     // Sort by priority and join time
     return filtered.sort((a, b) => {
-      // High priority first
+      // VIP first
+      if (a.priority === "vip" && b.priority !== "vip") return -1
+      if (b.priority === "vip" && a.priority !== "vip") return 1
+
+      // Then elderly/disabled
+      if (
+        (a.priority === "elderly" || a.priority === "disabled") &&
+        b.priority !== "elderly" &&
+        b.priority !== "disabled"
+      )
+        return -1
+      if (
+        (b.priority === "elderly" || b.priority === "disabled") &&
+        a.priority !== "elderly" &&
+        a.priority !== "disabled"
+      )
+        return 1
+
+      // Then high priority
       if (a.priority === "high" && b.priority !== "high") return -1
       if (b.priority === "high" && a.priority !== "high") return 1
 
@@ -93,16 +115,40 @@ class WaitlistService {
   }
 
   // Add customer to waitlist
-  async addToWaitlist(
-    entry: Omit<WaitlistEntry, "id" | "joinedAt" | "updatedAt" | "actualWaitTime">,
-  ): Promise<WaitlistEntry> {
+  addToWaitlist(entry: {
+    customerName: string
+    customerPhone: string
+    customerEmail?: string
+    partySize: number
+    priority: WaitlistPriority
+    specialRequests?: string
+  }): WaitlistEntry {
     const newEntry: WaitlistEntry = {
-      ...entry,
       id: `wait-${Date.now()}`,
-      joinedAt: new Date(),
-      updatedAt: new Date(),
-      actualWaitTime: 0,
+      customerName: entry.customerName,
+      customerPhone: entry.customerPhone,
+      customerEmail: entry.customerEmail || "",
+      partySize: entry.partySize,
+      priority: entry.priority,
+      specialRequests: entry.specialRequests || "",
       estimatedWaitTime: this.calculateEstimatedWaitTime(entry.partySize, entry.priority),
+      actualWaitTime: 0,
+      status: "waiting",
+      tablePreference: "any",
+      notificationPreferences: {
+        sms: true,
+        call: false,
+      },
+      location: {
+        latitude: 9.0054,
+        longitude: 38.7636,
+        address: "አዲስ አበባ፣ ቦሌ",
+      },
+      joinedAt: new Date(),
+      seatedAt: null,
+      createdBy: "host-001",
+      updatedAt: new Date(),
+      createdAt: new Date(),
     }
 
     waitlistEntries.push(newEntry)
@@ -110,71 +156,78 @@ class WaitlistService {
     return newEntry
   }
 
-  // Update waitlist entry
-  async updateWaitlistEntry(id: string, updates: Partial<WaitlistEntry>): Promise<WaitlistEntry | null> {
+  // Update waitlist status
+  updateWaitlistStatus(id: string, status: "seated" | "cancelled" | "no-show"): WaitlistEntry | null {
     const index = waitlistEntries.findIndex((entry) => entry.id === id)
     if (index === -1) return null
 
-    waitlistEntries[index] = {
-      ...waitlistEntries[index],
-      ...updates,
-      updatedAt: new Date(),
+    const entry = waitlistEntries[index]
+    const now = new Date()
+
+    if (status === "seated") {
+      entry.seatedAt = now
+      entry.actualWaitTime = Math.round((now.getTime() - entry.joinedAt.getTime()) / (1000 * 60))
     }
 
+    entry.status = status
+    entry.updatedAt = now
+
     this.updateAllEstimatedTimes()
-    return waitlistEntries[index]
+    return entry
   }
 
-  // Seat customer (remove from waitlist)
-  async seatCustomer(id: string, tableId?: string): Promise<WaitlistEntry | null> {
+  // Notify customer
+  notifyCustomer(id: string): boolean {
     const entry = waitlistEntries.find((e) => e.id === id)
-    if (!entry) return null
+    if (!entry) return false
 
-    const seatedAt = new Date()
-    const actualWaitTime = Math.round((seatedAt.getTime() - entry.joinedAt.getTime()) / (1000 * 60))
+    entry.status = "notified"
+    entry.updatedAt = new Date()
 
-    const updatedEntry = await this.updateWaitlistEntry(id, {
-      status: "seated",
-      seatedAt,
-      actualWaitTime,
-      assignedTable: tableId,
-    })
-
-    this.updateAllEstimatedTimes()
-    return updatedEntry
+    // In a real app, this would send SMS/call
+    console.log(`Notifying ${entry.customerName} at ${entry.customerPhone}`)
+    return true
   }
 
-  // Cancel waitlist entry
-  async cancelWaitlistEntry(id: string, reason?: string): Promise<WaitlistEntry | null> {
-    return this.updateWaitlistEntry(id, {
-      status: "cancelled",
-      cancelReason: reason,
+  // Check for available tables
+  checkForAvailableTables(): WaitlistEntry[] {
+    // Simulate checking for available tables
+    const waitingEntries = waitlistEntries.filter((entry) => entry.status === "waiting")
+    const readyEntries = waitingEntries.slice(0, 2) // Simulate 2 tables becoming available
+
+    readyEntries.forEach((entry) => {
+      entry.status = "ready"
+      entry.updatedAt = new Date()
     })
+
+    return readyEntries
   }
 
   // Get waitlist statistics
-  async getWaitlistStats(): Promise<WaitlistStats> {
+  getWaitlistStats(): WaitlistStats {
     const activeEntries = waitlistEntries.filter((entry) => entry.status === "waiting")
     const seatedToday = waitlistEntries.filter((entry) => entry.status === "seated" && this.isToday(entry.seatedAt))
     const cancelledToday = waitlistEntries.filter(
       (entry) => entry.status === "cancelled" && this.isToday(entry.updatedAt),
     )
+    const noShowToday = waitlistEntries.filter((entry) => entry.status === "no-show" && this.isToday(entry.updatedAt))
 
     const totalWaitTime = seatedToday.reduce((sum, entry) => sum + (entry.actualWaitTime || 0), 0)
     const averageWaitTime = seatedToday.length > 0 ? Math.round(totalWaitTime / seatedToday.length) : 0
 
+    const totalToday = seatedToday.length + cancelledToday.length + noShowToday.length
+    const noShowRate = totalToday > 0 ? Math.round((noShowToday.length / totalToday) * 100) : 0
+
     return {
       totalWaiting: activeEntries.length,
       averageWaitTime,
-      longestWait: Math.max(...activeEntries.map((entry) => this.getCurrentWaitTime(entry)), 0),
-      seatedToday: seatedToday.length,
-      cancelledToday: cancelledToday.length,
-      peakHours: this.calculatePeakHours(),
+      totalSeatedToday: seatedToday.length,
+      noShowRate,
     }
   }
 
   // Calculate estimated wait time
-  private calculateEstimatedWaitTime(partySize: number, priority: "low" | "normal" | "high"): number {
+  private calculateEstimatedWaitTime(partySize: number, priority: WaitlistPriority): number {
     let baseTime = 20 // Base wait time in minutes
 
     // Adjust for party size
@@ -183,8 +236,8 @@ class WaitlistService {
     else if (partySize <= 2) baseTime -= 5
 
     // Adjust for priority
-    if (priority === "high") baseTime -= 10
-    else if (priority === "low") baseTime += 10
+    if (priority === "vip") baseTime -= 15
+    else if (priority === "high" || priority === "elderly" || priority === "disabled") baseTime -= 10
 
     // Consider current waitlist length
     const waitingCount = waitlistEntries.filter((entry) => entry.status === "waiting").length
@@ -203,11 +256,6 @@ class WaitlistService {
     })
   }
 
-  // Get current wait time for an entry
-  private getCurrentWaitTime(entry: WaitlistEntry): number {
-    return Math.round((new Date().getTime() - entry.joinedAt.getTime()) / (1000 * 60))
-  }
-
   // Check if date is today
   private isToday(date: Date | null): boolean {
     if (!date) return false
@@ -218,69 +266,6 @@ class WaitlistService {
       checkDate.getMonth() === today.getMonth() &&
       checkDate.getFullYear() === today.getFullYear()
     )
-  }
-
-  // Calculate peak hours
-  private calculatePeakHours(): string[] {
-    const hourCounts: Record<number, number> = {}
-
-    waitlistEntries
-      .filter((entry) => this.isToday(entry.joinedAt))
-      .forEach((entry) => {
-        const hour = entry.joinedAt.getHours()
-        hourCounts[hour] = (hourCounts[hour] || 0) + 1
-      })
-
-    const sortedHours = Object.entries(hourCounts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 3)
-      .map(([hour]) => `${hour}:00`)
-
-    return sortedHours
-  }
-
-  // Send notification to customer
-  async sendNotification(entryId: string, message: string, type: "sms" | "call"): Promise<boolean> {
-    const entry = waitlistEntries.find((e) => e.id === entryId)
-    if (!entry) return false
-
-    // In a real app, this would integrate with SMS/calling service
-    console.log(`Sending ${type} to ${entry.customerPhone}: ${message}`)
-
-    // Update notification history
-    if (!entry.notificationHistory) {
-      entry.notificationHistory = []
-    }
-
-    entry.notificationHistory.push({
-      type,
-      message,
-      sentAt: new Date(),
-      status: "sent",
-    })
-
-    return true
-  }
-
-  // Get entry by ID
-  async getWaitlistEntry(id: string): Promise<WaitlistEntry | null> {
-    return waitlistEntries.find((entry) => entry.id === id) || null
-  }
-
-  // Get next customer to be seated
-  async getNextCustomer(): Promise<WaitlistEntry | null> {
-    const waiting = waitlistEntries
-      .filter((entry) => entry.status === "waiting")
-      .sort((a, b) => {
-        // High priority first
-        if (a.priority === "high" && b.priority !== "high") return -1
-        if (b.priority === "high" && a.priority !== "high") return 1
-
-        // Then by join time
-        return new Date(a.joinedAt).getTime() - new Date(b.joinedAt).getTime()
-      })
-
-    return waiting[0] || null
   }
 }
 
