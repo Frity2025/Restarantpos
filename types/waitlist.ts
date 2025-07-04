@@ -1,6 +1,6 @@
-export type WaitlistPriority = "normal" | "high" | "vip" | "elderly" | "disabled"
-
 export type WaitlistStatus = "waiting" | "notified" | "ready" | "seated" | "cancelled" | "no-show"
+
+export type WaitlistPriority = "low" | "normal" | "high" | "vip" | "elderly" | "disabled"
 
 export interface WaitlistEntry {
   id: string
@@ -24,7 +24,7 @@ export interface WaitlistEntry {
     address: string
   }
   joinedAt: Date
-  seatedAt: Date | null
+  seatedAt?: Date | null
   createdBy: string
   updatedAt: Date
   createdAt: Date
@@ -38,13 +38,6 @@ export interface WaitlistEntry {
   }>
 }
 
-export interface WaitlistStats {
-  totalWaiting: number
-  averageWaitTime: number
-  totalSeatedToday: number
-  noShowRate: number
-}
-
 export interface WaitlistFilters {
   status?: WaitlistStatus
   priority?: WaitlistPriority
@@ -53,4 +46,22 @@ export interface WaitlistFilters {
     start: Date
     end: Date
   }
+}
+
+export interface WaitlistStats {
+  totalWaiting: number
+  averageWaitTime: number
+  totalSeatedToday: number
+  noShowRate: number
+}
+
+export interface WaitlistNotification {
+  id: string
+  entryId: string
+  type: "table_ready" | "reminder" | "cancellation"
+  message: string
+  method: "sms" | "call" | "push"
+  status: "pending" | "sent" | "failed"
+  scheduledAt: Date
+  sentAt?: Date
 }
