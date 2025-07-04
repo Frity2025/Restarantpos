@@ -5,15 +5,16 @@ export interface WaitlistEntry {
   customerEmail?: string
   partySize: number
   priority: WaitlistPriority
-  estimatedWaitTime: number // in minutes
-  actualWaitTime?: number
   status: WaitlistStatus
+  estimatedWaitTime: number
+  actualWaitTime?: number
   specialRequests?: string
   createdAt: Date
+  updatedAt: Date
   notifiedAt?: Date
   seatedAt?: Date
-  cancelledAt?: Date
-  noShowAt?: Date
+  tableAssigned?: string
+  createdBy: string
 }
 
 export type WaitlistPriority = "normal" | "high" | "vip" | "elderly" | "disabled"
@@ -22,15 +23,27 @@ export type WaitlistStatus = "waiting" | "notified" | "ready" | "seated" | "canc
 
 export interface WaitlistStats {
   totalWaiting: number
+  totalNotified: number
+  totalSeatedToday: number
+  totalCancelledToday: number
+  totalNoShowToday: number
   averageWaitTime: number
   longestWaitTime: number
-  totalSeatedToday: number
   noShowRate: number
-  priorityBreakdown: Record<WaitlistPriority, number>
+  priorityBreakdown: {
+    normal: number
+    high: number
+    vip: number
+    elderly: number
+    disabled: number
+  }
 }
 
-export interface NotificationPreferences {
-  sms: boolean
-  call: boolean
-  email: boolean
+export interface WaitlistNotification {
+  id: string
+  entryId: string
+  type: "sms" | "call" | "email"
+  message: string
+  sentAt: Date
+  status: "pending" | "sent" | "failed"
 }

@@ -1,191 +1,246 @@
-import type { Employee, LoginCredentials, AuthResponse, UserRole } from "@/types/auth"
-import { rolePermissions } from "@/config/roles-permissions"
+import type { User, LoginCredentials, AuthState } from "@/types/auth"
+import { roleHasPermission } from "@/config/roles-permissions"
 
-// ናሙና ሰራተኞች (በእውነተኛ አፕሊኬሽን ውስጥ ከዳታቤዝ ይመጣል)
-const employees: Employee[] = [
+// ናሙና ተጠቃሚዎች
+const users: User[] = [
   {
-    id: "emp-001",
-    firstName: "አበበ",
-    lastName: "ከበደ",
+    id: "admin-001",
+    username: "admin",
+    name: "አስተዳዳሪ",
     email: "admin@restaurant.com",
-    phone: "+251911123456",
     role: "admin",
-    password: "admin123", // በእውነተኛ አፕሊኬሽን ውስጥ ይመሰጠራል
     isActive: true,
     createdAt: new Date("2024-01-01"),
     lastLogin: new Date(),
-    permissions: [],
-    shift: "morning",
-    salary: 15000,
-    hireDate: new Date("2024-01-01"),
   },
   {
-    id: "emp-002",
-    firstName: "ፋጢማ",
-    lastName: "አህመድ",
+    id: "manager-001",
+    username: "manager",
+    name: "ሥራ አስኪያጅ አህመድ",
     email: "manager@restaurant.com",
-    phone: "+251911234567",
     role: "manager",
-    password: "manager123",
     isActive: true,
-    createdAt: new Date("2024-01-15"),
+    createdAt: new Date("2024-01-01"),
     lastLogin: new Date(),
-    permissions: [],
-    shift: "afternoon",
-    salary: 12000,
-    hireDate: new Date("2024-01-15"),
   },
   {
-    id: "emp-003",
-    firstName: "ዳዊት",
-    lastName: "ተስፋዬ",
-    email: "cashier@restaurant.com",
-    phone: "+251911345678",
-    role: "cashier",
-    password: "cashier123",
-    isActive: true,
-    createdAt: new Date("2024-02-01"),
-    permissions: [],
-    shift: "morning",
-    salary: 8000,
-    hireDate: new Date("2024-02-01"),
-  },
-  {
-    id: "emp-004",
-    firstName: "ሄለን",
-    lastName: "ገብረ",
-    email: "waiter@restaurant.com",
-    phone: "+251911456789",
+    id: "waiter-001",
+    username: "waiter1",
+    name: "አስተናጋጅ ፋጢማ",
+    email: "fatima@restaurant.com",
     role: "waiter",
-    password: "waiter123",
     isActive: true,
-    createdAt: new Date("2024-02-15"),
-    permissions: [],
-    shift: "afternoon",
-    salary: 6000,
-    hireDate: new Date("2024-02-15"),
+    createdAt: new Date("2024-01-01"),
+    lastLogin: new Date(),
+  },
+  {
+    id: "kitchen-001",
+    username: "chef1",
+    name: "ሼፍ ዳዊት",
+    email: "dawit@restaurant.com",
+    role: "kitchen",
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    lastLogin: new Date(),
+  },
+  {
+    id: "host-001",
+    username: "host1",
+    name: "ተቀባይ ሳራ",
+    email: "sara@restaurant.com",
+    role: "host",
+    isActive: true,
+    createdAt: new Date("2024-01-01"),
+    lastLogin: new Date(),
   },
 ]
 
-// የመግቢያ አገልግሎት
-export class AuthService {
-  private static instance: AuthService
-  private currentEmployee: Employee | null = null
+class AuthService {
+  private currentUser: User | null = null
+  private isAuthenticated = false
 
-  static getInstance(): AuthService {
-    if (!AuthService.instance) {
-      AuthService.instance = new AuthService()
-    }
-    return AuthService.instance
-  }
+  // ግንኙነት
+  async login(credentials: LoginCredentials): Promise<{ success: boolean; user?: User; error?: string }> {
+    // ናሙና ማረጋገጫ - በእውነተኛ አፕሊኬሽን ውስጥ ይህ ወደ ሰርቨር API ይላካል
+    const user = users.find((u) => u.username === credentials.username && u.isActive)
 
-  // መግባት
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    // ሰራተኛ መፈለግ
-    const employee = employees.find(
-      (emp) => emp.email === credentials.email && emp.password === credentials.password && emp.isActive,
-    )
-
-    if (!employee) {
-      return {
-        success: false,
-        message: "የተሳሳተ ኢሜይል ወይም የይለፍ ቃል",
-      }
+    if (!user) {
+      return { success: false, error: "የተጠቃሚ ስም ወይም የይለፍ ቃል ስህተት" }
     }
 
-    // የመጨረሻ መግቢያ ጊዜ ማዘመን
-    employee.lastLogin = new Date()
-    this.currentEmployee = employee
-
-    // ፈቃዶችን መጫን
-    employee.permissions = this.getEmployeePermissions(employee.role)
-
-    // ቶከን መፍጠር (ለቀላልነት ብቻ)
-    const token = `token_${employee.id}_${Date.now()}`
-
-    return {
-      success: true,
-      employee,
-      token,
-      message: "በተሳካ ሁኔታ ገብተዋል",
+    // ናሙና የይለፍ ቃል ማረጋገጫ (በእውነተኛ አፕሊኬሽን ውስጥ hashed ይሆናል)
+    const validPasswords: Record<string, string> = {
+      admin: "admin123",
+      manager: "manager123",
+      waiter1: "waiter123",
+      chef1: "chef123",
+      host1: "host123",
     }
+
+    if (validPasswords[credentials.username] !== credentials.password) {
+      return { success: false, error: "የተጠቃሚ ስም ወይም የይለፍ ቃል ስህተት" }
+    }
+
+    // የመጨረሻ ግንኙነት ጊዜ ማዘመን
+    user.lastLogin = new Date()
+    this.currentUser = user
+    this.isAuthenticated = true
+
+    // ወደ localStorage ማስቀመጥ
+    if (typeof window !== "undefined") {
+      localStorage.setItem("auth_user", JSON.stringify(user))
+      localStorage.setItem("auth_token", "sample_token_" + user.id)
+    }
+
+    return { success: true, user }
   }
 
   // መውጣት
   logout(): void {
-    this.currentEmployee = null
-    localStorage.removeItem("auth_token")
-    localStorage.removeItem("current_employee")
+    this.currentUser = null
+    this.isAuthenticated = false
+
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("auth_user")
+      localStorage.removeItem("auth_token")
+    }
   }
 
-  // የአሁኑ ሰራተኛ
-  getCurrentEmployee(): Employee | null {
-    return this.currentEmployee
+  // የአሁኑ ተጠቃሚ ማግኘት
+  getCurrentUser(): User | null {
+    if (this.currentUser) {
+      return this.currentUser
+    }
+
+    // ከ localStorage ማግኘት
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem("auth_user")
+      const storedToken = localStorage.getItem("auth_token")
+
+      if (storedUser && storedToken) {
+        try {
+          this.currentUser = JSON.parse(storedUser)
+          this.isAuthenticated = true
+          return this.currentUser
+        } catch (error) {
+          console.error("Error parsing stored user:", error)
+          this.logout()
+        }
+      }
+    }
+
+    return null
   }
 
-  // ሰራተኛ ፈቃድ አለው?
-  hasPermission(permissionId: string): boolean {
-    if (!this.currentEmployee) return false
-    return this.currentEmployee.permissions.some((p) => p.id === permissionId)
+  // ማረጋገጫ ሁኔታ
+  getAuthState(): AuthState {
+    const user = this.getCurrentUser()
+    return {
+      isAuthenticated: !!user,
+      user,
+      isLoading: false,
+    }
   }
 
-  // የሰራተኛ ፈቃዶች
-  private getEmployeePermissions(role: UserRole) {
-    const permissionIds = rolePermissions[role] || []
-    return permissionIds.map((id) => ({ id, name: id, description: "", module: "" }))
+  // ፈቃድ ማረጋገጥ
+  hasPermission(permission: string): boolean {
+    const user = this.getCurrentUser()
+    if (!user) return false
+
+    return roleHasPermission(user.role, permission)
   }
 
-  // ሁሉም ሰራተኞች
-  getAllEmployees(): Employee[] {
-    return employees.filter((emp) => emp.isActive)
+  // ብዙ ፈቃዶች ማረጋገጥ (ማንኛውም አንድ ካለ)
+  hasAnyPermission(permissions: string[]): boolean {
+    return permissions.some((permission) => this.hasPermission(permission))
   }
 
-  // ሰራተኛ መጨመር
-  addEmployee(employeeData: Omit<Employee, "id" | "createdAt" | "permissions">): Employee {
-    const newEmployee: Employee = {
-      ...employeeData,
-      id: `emp-${Date.now()}`,
+  // ሁሉም ፈቃዶች ማረጋገጥ
+  hasAllPermissions(permissions: string[]): boolean {
+    return permissions.every((permission) => this.hasPermission(permission))
+  }
+
+  // ሚና ማረጋገጥ
+  hasRole(role: string): boolean {
+    const user = this.getCurrentUser()
+    return user?.role === role
+  }
+
+  // አስተዳዳሪ እንደሆነ ማረጋገጥ
+  isAdmin(): boolean {
+    return this.hasRole("admin")
+  }
+
+  // ሁሉንም ተጠቃሚዎች ማግኘት (አስተዳዳሪዎች ብቻ)
+  getAllUsers(): User[] {
+    if (!this.isAdmin()) {
+      throw new Error("Unauthorized: Admin access required")
+    }
+    return users
+  }
+
+  // ተጠቃሚ ማግኘት በመለያ
+  getUserById(id: string): User | undefined {
+    if (!this.hasPermission("view_employees") && !this.isAdmin()) {
+      throw new Error("Unauthorized: Insufficient permissions")
+    }
+    return users.find((user) => user.id === id)
+  }
+
+  // አዲስ ተጠቃሚ መፍጠር
+  createUser(userData: Omit<User, "id" | "createdAt" | "lastLogin">): User {
+    if (!this.hasPermission("manage_employees")) {
+      throw new Error("Unauthorized: Cannot create users")
+    }
+
+    const newUser: User = {
+      ...userData,
+      id: `user-${Date.now()}`,
       createdAt: new Date(),
-      permissions: this.getEmployeePermissions(employeeData.role),
+      lastLogin: null,
     }
-    employees.push(newEmployee)
-    return newEmployee
+
+    users.push(newUser)
+    return newUser
   }
 
-  // ሰራተኛ ማስተካከል
-  updateEmployee(id: string, updates: Partial<Employee>): Employee | null {
-    const index = employees.findIndex((emp) => emp.id === id)
-    if (index === -1) return null
-
-    employees[index] = { ...employees[index], ...updates }
-    if (updates.role) {
-      employees[index].permissions = this.getEmployeePermissions(updates.role)
+  // ተጠቃሚ ማዘመን
+  updateUser(id: string, updates: Partial<User>): User | null {
+    if (!this.hasPermission("manage_employees")) {
+      throw new Error("Unauthorized: Cannot update users")
     }
-    return employees[index]
+
+    const userIndex = users.findIndex((user) => user.id === id)
+    if (userIndex === -1) return null
+
+    users[userIndex] = { ...users[userIndex], ...updates }
+    return users[userIndex]
   }
 
-  // ሰራተኛ መሰረዝ
-  deleteEmployee(id: string): boolean {
-    const index = employees.findIndex((emp) => emp.id === id)
-    if (index === -1) return false
+  // ተጠቃሚ ማሰናከል/ማንቃት
+  toggleUserStatus(id: string): User | null {
+    if (!this.hasPermission("manage_employees")) {
+      throw new Error("Unauthorized: Cannot modify user status")
+    }
 
-    employees[index].isActive = false
-    return true
+    const user = users.find((user) => user.id === id)
+    if (!user) return null
+
+    user.isActive = !user.isActive
+    return user
   }
 }
 
-export const authService = AuthService.getInstance()
+// ነጠላ instance መፍጠር
+export const authService = new AuthService()
 
-// Export the hasPermission function for direct use
-export const hasPermission = (permissionId: string): boolean => {
-  return authService.hasPermission(permissionId)
-}
-
-// Export other utility functions
-export const getCurrentEmployee = (): Employee | null => {
-  return authService.getCurrentEmployee()
-}
-
-export const getAllEmployees = (): Employee[] => {
-  return authService.getAllEmployees()
-}
+// የተለመዱ exports
+export const login = (credentials: LoginCredentials) => authService.login(credentials)
+export const logout = () => authService.logout()
+export const getCurrentUser = () => authService.getCurrentUser()
+export const getAuthState = () => authService.getAuthState()
+export const hasPermission = (permission: string) => authService.hasPermission(permission)
+export const hasAnyPermission = (permissions: string[]) => authService.hasAnyPermission(permissions)
+export const hasAllPermissions = (permissions: string[]) => authService.hasAllPermissions(permissions)
+export const hasRole = (role: string) => authService.hasRole(role)
+export const isAdmin = () => authService.isAdmin()
