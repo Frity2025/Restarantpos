@@ -30,7 +30,7 @@ export function ProtectedRoute({ children, requiredPermission, requiredRole }: P
     return <LoginForm />
   }
 
-  // የደረጃ ፍተሻ
+  // Role check
   if (requiredRole && employee.role !== requiredRole) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -42,7 +42,7 @@ export function ProtectedRoute({ children, requiredPermission, requiredRole }: P
     )
   }
 
-  // የፈቃድ ፍተሻ
+  // Permission check
   if (requiredPermission && !hasPermission(requiredPermission)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">

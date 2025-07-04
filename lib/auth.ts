@@ -1,8 +1,8 @@
-import type { User, LoginCredentials, AuthState } from "@/types/auth"
+import type { Employee, LoginCredentials, AuthResponse } from "@/types/auth"
 import { roleHasPermission } from "@/config/roles-permissions"
 
-// ናሙና ተጠቃሚዎች
-const users: User[] = [
+// Sample employees data
+const employees: Employee[] = [
   {
     id: "admin-001",
     username: "admin",
@@ -56,19 +56,19 @@ const users: User[] = [
 ]
 
 class AuthService {
-  private currentUser: User | null = null
+  private currentEmployee: Employee | null = null
   private isAuthenticated = false
 
-  // ግንኙነት
-  async login(credentials: LoginCredentials): Promise<{ success: boolean; user?: User; error?: string }> {
-    // ናሙና ማረጋገጫ - በእውነተኛ አፕሊኬሽን ውስጥ ይህ ወደ ሰርቨር API ይላካል
-    const user = users.find((u) => u.username === credentials.username && u.isActive)
+  // Login
+  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+    // Sample authentication - in real app this would call server API
+    const employee = employees.find((e) => e.username === credentials.username && e.isActive)
 
-    if (!user) {
+    if (!employee) {
       return { success: false, error: "የተጠቃሚ ስም ወይም የይለፍ ቃል ስህተት" }
     }
 
-    // ናሙና የይለፍ ቃል ማረጋገጫ (በእውነተኛ አፕሊኬሽን ውስጥ hashed ይሆናል)
+    // Sample password validation (in real app passwords would be hashed)
     const validPasswords: Record<string, string> = {
       admin: "admin123",
       manager: "manager123",
@@ -81,49 +81,49 @@ class AuthService {
       return { success: false, error: "የተጠቃሚ ስም ወይም የይለፍ ቃል ስህተት" }
     }
 
-    // የመጨረሻ ግንኙነት ጊዜ ማዘመን
-    user.lastLogin = new Date()
-    this.currentUser = user
+    // Update last login time
+    employee.lastLogin = new Date()
+    this.currentEmployee = employee
     this.isAuthenticated = true
 
-    // ወደ localStorage ማስቀመጥ
+    // Save to localStorage
     if (typeof window !== "undefined") {
-      localStorage.setItem("auth_user", JSON.stringify(user))
-      localStorage.setItem("auth_token", "sample_token_" + user.id)
+      localStorage.setItem("auth_employee", JSON.stringify(employee))
+      localStorage.setItem("auth_token", "sample_token_" + employee.id)
     }
 
-    return { success: true, user }
+    return { success: true, employee, token: "sample_token_" + employee.id }
   }
 
-  // መውጣት
+  // Logout
   logout(): void {
-    this.currentUser = null
+    this.currentEmployee = null
     this.isAuthenticated = false
 
     if (typeof window !== "undefined") {
-      localStorage.removeItem("auth_user")
+      localStorage.removeItem("auth_employee")
       localStorage.removeItem("auth_token")
     }
   }
 
-  // የአሁኑ ተጠቃሚ ማግኘት
-  getCurrentUser(): User | null {
-    if (this.currentUser) {
-      return this.currentUser
+  // Get current employee
+  getCurrentEmployee(): Employee | null {
+    if (this.currentEmployee) {
+      return this.currentEmployee
     }
 
-    // ከ localStorage ማግኘት
+    // Try to get from localStorage
     if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("auth_user")
+      const storedEmployee = localStorage.getItem("auth_employee")
       const storedToken = localStorage.getItem("auth_token")
 
-      if (storedUser && storedToken) {
+      if (storedEmployee && storedToken) {
         try {
-          this.currentUser = JSON.parse(storedUser)
+          this.currentEmployee = JSON.parse(storedEmployee)
           this.isAuthenticated = true
-          return this.currentUser
+          return this.currentEmployee
         } catch (error) {
-          console.error("Error parsing stored user:", error)
+          console.error("Error parsing stored employee:", error)
           this.logout()
         }
       }
@@ -132,113 +132,107 @@ class AuthService {
     return null
   }
 
-  // ማረጋገጫ ሁኔታ
-  getAuthState(): AuthState {
-    const user = this.getCurrentUser()
-    return {
-      isAuthenticated: !!user,
-      user,
-      isLoading: false,
-    }
+  // Check if authenticated
+  isAuth(): boolean {
+    return !!this.getCurrentEmployee()
   }
 
-  // ፈቃድ ማረጋገጥ
+  // Check permission
   hasPermission(permission: string): boolean {
-    const user = this.getCurrentUser()
-    if (!user) return false
+    const employee = this.getCurrentEmployee()
+    if (!employee) return false
 
-    return roleHasPermission(user.role, permission)
+    return roleHasPermission(employee.role, permission)
   }
 
-  // ብዙ ፈቃዶች ማረጋገጥ (ማንኛውም አንድ ካለ)
+  // Check multiple permissions (any one)
   hasAnyPermission(permissions: string[]): boolean {
     return permissions.some((permission) => this.hasPermission(permission))
   }
 
-  // ሁሉም ፈቃዶች ማረጋገጥ
+  // Check all permissions
   hasAllPermissions(permissions: string[]): boolean {
     return permissions.every((permission) => this.hasPermission(permission))
   }
 
-  // ሚና ማረጋገጥ
+  // Check role
   hasRole(role: string): boolean {
-    const user = this.getCurrentUser()
-    return user?.role === role
+    const employee = this.getCurrentEmployee()
+    return employee?.role === role
   }
 
-  // አስተዳዳሪ እንደሆነ ማረጋገጥ
+  // Check if admin
   isAdmin(): boolean {
     return this.hasRole("admin")
   }
 
-  // ሁሉንም ተጠቃሚዎች ማግኘት (አስተዳዳሪዎች ብቻ)
-  getAllUsers(): User[] {
+  // Get all employees (admin only)
+  getAllEmployees(): Employee[] {
     if (!this.isAdmin()) {
       throw new Error("Unauthorized: Admin access required")
     }
-    return users
+    return employees
   }
 
-  // ተጠቃሚ ማግኘት በመለያ
-  getUserById(id: string): User | undefined {
+  // Get employee by ID
+  getEmployeeById(id: string): Employee | undefined {
     if (!this.hasPermission("view_employees") && !this.isAdmin()) {
       throw new Error("Unauthorized: Insufficient permissions")
     }
-    return users.find((user) => user.id === id)
+    return employees.find((employee) => employee.id === id)
   }
 
-  // አዲስ ተጠቃሚ መፍጠር
-  createUser(userData: Omit<User, "id" | "createdAt" | "lastLogin">): User {
+  // Create new employee
+  createEmployee(employeeData: Omit<Employee, "id" | "createdAt" | "lastLogin">): Employee {
     if (!this.hasPermission("manage_employees")) {
-      throw new Error("Unauthorized: Cannot create users")
+      throw new Error("Unauthorized: Cannot create employees")
     }
 
-    const newUser: User = {
-      ...userData,
-      id: `user-${Date.now()}`,
+    const newEmployee: Employee = {
+      ...employeeData,
+      id: `emp-${Date.now()}`,
       createdAt: new Date(),
       lastLogin: null,
     }
 
-    users.push(newUser)
-    return newUser
+    employees.push(newEmployee)
+    return newEmployee
   }
 
-  // ተጠቃሚ ማዘመን
-  updateUser(id: string, updates: Partial<User>): User | null {
+  // Update employee
+  updateEmployee(id: string, updates: Partial<Employee>): Employee | null {
     if (!this.hasPermission("manage_employees")) {
-      throw new Error("Unauthorized: Cannot update users")
+      throw new Error("Unauthorized: Cannot update employees")
     }
 
-    const userIndex = users.findIndex((user) => user.id === id)
-    if (userIndex === -1) return null
+    const employeeIndex = employees.findIndex((employee) => employee.id === id)
+    if (employeeIndex === -1) return null
 
-    users[userIndex] = { ...users[userIndex], ...updates }
-    return users[userIndex]
+    employees[employeeIndex] = { ...employees[employeeIndex], ...updates }
+    return employees[employeeIndex]
   }
 
-  // ተጠቃሚ ማሰናከል/ማንቃት
-  toggleUserStatus(id: string): User | null {
+  // Toggle employee status
+  toggleEmployeeStatus(id: string): Employee | null {
     if (!this.hasPermission("manage_employees")) {
-      throw new Error("Unauthorized: Cannot modify user status")
+      throw new Error("Unauthorized: Cannot modify employee status")
     }
 
-    const user = users.find((user) => user.id === id)
-    if (!user) return null
+    const employee = employees.find((employee) => employee.id === id)
+    if (!employee) return null
 
-    user.isActive = !user.isActive
-    return user
+    employee.isActive = !employee.isActive
+    return employee
   }
 }
 
-// ነጠላ instance መፍጠር
+// Create service instance
 export const authService = new AuthService()
 
-// የተለመዱ exports
+// Export common functions
 export const login = (credentials: LoginCredentials) => authService.login(credentials)
 export const logout = () => authService.logout()
-export const getCurrentUser = () => authService.getCurrentUser()
-export const getAuthState = () => authService.getAuthState()
+export const getCurrentEmployee = () => authService.getCurrentEmployee()
 export const hasPermission = (permission: string) => authService.hasPermission(permission)
 export const hasAnyPermission = (permissions: string[]) => authService.hasAnyPermission(permissions)
 export const hasAllPermissions = (permissions: string[]) => authService.hasAllPermissions(permissions)
