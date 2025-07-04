@@ -1,12 +1,14 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Badge } from "@/components/ui/badge"
 import {
   Home,
   ShoppingCart,
@@ -15,104 +17,190 @@ import {
   BarChart3,
   Settings,
   Package,
+  Truck,
+  CreditCard,
   Calendar,
   Clock,
-  CreditCard,
-  Menu,
-  LogOut,
   UserCheck,
-  Truck,
+  Menu,
+  X,
+  Store,
+  TableProperties,
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 
-const navigation = [
-  { name: "ዋና ገጽ", href: "/", icon: Home, permission: "pos_view" },
-  { name: "ትዕዛዞች", href: "/orders", icon: ShoppingCart, permission: "orders_view" },
-  { name: "ኩሽና", href: "/kitchen", icon: ChefHat, permission: "kitchen_view" },
-  { name: "ጠረጴዛዎች", href: "/tables", icon: Calendar, permission: "tables_view" },
-  { name: "ቦታ ማስያዝ", href: "/reservations", icon: Clock, permission: "reservations_view" },
-  { name: "ጥበቃ ዝርዝር", href: "/waitlist", icon: UserCheck, permission: "waitlist_view" },
-  { name: "ክምችት", href: "/inventory", icon: Package, permission: "inventory_view" },
-  { name: "አቅራቢዎች", href: "/suppliers", icon: Truck, permission: "suppliers_view" },
-  { name: "ክፍያዎች", href: "/payments", icon: CreditCard, permission: "payments_view" },
-  { name: "ሰራተኞች", href: "/employees", icon: Users, permission: "employees_view" },
-  { name: "ሪፖርቶች", href: "/stats", icon: BarChart3, permission: "reports_view" },
-  { name: "አስተዳደር", href: "/admin", icon: Settings, permission: "admin_access" },
+interface NavItem {
+  title: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  badge?: string
+  permissions?: string[]
+}
+
+const navItems: NavItem[] = [
+  {
+    title: "ዳሽቦርድ",
+    href: "/",
+    icon: Home,
+    permissions: ["pos_view"],
+  },
+  {
+    title: "ትዕዛዞች",
+    href: "/orders",
+    icon: ShoppingCart,
+    permissions: ["view_orders"],
+  },
+  {
+    title: "ኩሽና",
+    href: "/kitchen",
+    icon: ChefHat,
+    permissions: ["kitchen_access"],
+  },
+  {
+    title: "ጠረጴዛዎች",
+    href: "/tables",
+    icon: TableProperties,
+    permissions: ["view_tables"],
+  },
+  {
+    title: "ቦታ ማስያዝ",
+    href: "/reservations",
+    icon: Calendar,
+    permissions: ["view_reservations"],
+  },
+  {
+    title: "ጥበቃ ዝርዝር",
+    href: "/waitlist",
+    icon: Clock,
+    permissions: ["view_waitlist"],
+  },
+  {
+    title: "ክፍያዎች",
+    href: "/payments",
+    icon: CreditCard,
+    permissions: ["process_payments"],
+  },
+  {
+    title: "ክምችት",
+    href: "/inventory",
+    icon: Package,
+    permissions: ["view_inventory"],
+  },
+  {
+    title: "አቅራቢዎች",
+    href: "/suppliers",
+    icon: Truck,
+    permissions: ["view_suppliers"],
+  },
+  {
+    title: "ሰራተኞች",
+    href: "/employees",
+    icon: Users,
+    permissions: ["view_employees"],
+  },
+  {
+    title: "ስታቲስቲክስ",
+    href: "/stats",
+    icon: BarChart3,
+    permissions: ["view_analytics"],
+  },
+  {
+    title: "አስተዳደር",
+    href: "/admin",
+    icon: Settings,
+    permissions: ["admin_access"],
+  },
 ]
 
 export function SidebarNav() {
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = usePathname()
-  const { employee, logout, hasPermission } = useAuth()
-  const [open, setOpen] = useState(false)
+  const { employee, hasPermission } = useAuth()
 
-  const filteredNavigation = navigation.filter((item) => hasPermission(item.permission) || hasPermission("all"))
+  const filteredNavItems = navItems.filter((item) => {
+    if (!item.permissions || item.permissions.length === 0) return true
+    return item.permissions.some((permission) => hasPermission(permission))
+  })
 
-  const NavContent = () => (
-    <div className="flex h-full flex-col">
-      <div className="flex h-14 items-center border-b px-4">
-        <Link className="flex items-center gap-2 font-semibold" href="/">
-          <ChefHat className="h-6 w-6" />
-          <span>ሬስቶራንት POS</span>
-        </Link>
+  return (
+    <div
+      className={cn(
+        "flex flex-col h-full bg-white border-r border-gray-200 transition-all duration-300",
+        isCollapsed ? "w-16" : "w-64",
+      )}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        {!isCollapsed && (
+          <div className="flex items-center space-x-2">
+            <Store className="h-6 w-6 text-blue-600" />
+            <span className="font-bold text-lg text-gray-900">Restaurant POS</span>
+          </div>
+        )}
+        <Button variant="ghost" size="sm" onClick={() => setIsCollapsed(!isCollapsed)} className="h-8 w-8 p-0">
+          {isCollapsed ? <Menu className="h-4 w-4" /> : <X className="h-4 w-4" />}
+        </Button>
       </div>
-      <ScrollArea className="flex-1 px-3">
-        <div className="space-y-1 py-4">
-          {filteredNavigation.map((item) => {
+
+      {/* User Info */}
+      {!isCollapsed && employee && (
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+              <UserCheck className="h-4 w-4 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">{employee.name}</p>
+              <p className="text-xs text-gray-500 truncate">{employee.role}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Navigation */}
+      <ScrollArea className="flex-1">
+        <nav className="p-2 space-y-1">
+          {filteredNavItems.map((item) => {
             const isActive = pathname === item.href
+            const Icon = item.icon
+
             return (
-              <Link
-                key={item.name}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent",
-                  isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground",
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.name}
+              <Link key={item.href} href={item.href}>
+                <Button
+                  variant={isActive ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-start h-10",
+                    isCollapsed ? "px-2" : "px-3",
+                    isActive && "bg-blue-50 text-blue-700 border-blue-200",
+                  )}
+                >
+                  <Icon className={cn("h-4 w-4", isCollapsed ? "" : "mr-3")} />
+                  {!isCollapsed && (
+                    <>
+                      <span className="flex-1 text-left">{item.title}</span>
+                      {item.badge && (
+                        <Badge variant="secondary" className="ml-auto">
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </>
+                  )}
+                </Button>
               </Link>
             )
           })}
-        </div>
+        </nav>
       </ScrollArea>
-      <div className="border-t p-4">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center">
-            <Users className="h-4 w-4" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{employee?.name}</p>
-            <p className="text-xs text-muted-foreground">{employee?.role}</p>
+
+      {/* Footer */}
+      {!isCollapsed && (
+        <div className="p-4 border-t border-gray-200">
+          <div className="text-xs text-gray-500 text-center">
+            <p>Restaurant POS v1.0</p>
+            <p>© 2024 All rights reserved</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" className="w-full bg-transparent" onClick={logout}>
-          <LogOut className="h-4 w-4 mr-2" />
-          ውጣ
-        </Button>
-      </div>
+      )}
     </div>
-  )
-
-  return (
-    <>
-      {/* Desktop Sidebar */}
-      <div className="hidden border-r bg-muted/40 md:block w-64">
-        <NavContent />
-      </div>
-
-      {/* Mobile Sidebar */}
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="shrink-0 md:hidden fixed top-4 left-4 z-40 bg-transparent">
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle navigation menu</span>
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="flex flex-col p-0 w-64">
-          <NavContent />
-        </SheetContent>
-      </Sheet>
-    </>
   )
 }
