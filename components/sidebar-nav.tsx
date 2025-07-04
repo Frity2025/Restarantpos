@@ -1,143 +1,83 @@
-"use client"
+import { LayoutDashboard, Settings, User, ShoppingCart, Receipt, GitBranch, FileIcon as FileTemplate } from 'lucide-react'
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { useAuth } from "@/contexts/auth-context"
-import {
-  Home,
-  ShoppingCart,
-  Users,
-  ChefHat,
-  BarChart3,
-  Settings,
-  Calendar,
-  Clock,
-  Table,
-  UserCheck,
-  Package,
-  Truck,
-} from "lucide-react"
+import { Icons } from "@/components/icons"
 
-const navigation = [
+export interface NavItem {
+  title: string
+  titleAmharic: string
+  href?: string
+  disabled?: boolean
+  external?: boolean
+  icon?: keyof typeof Icons
+  permissions?: string[]
+  label?: string
+}
+
+export interface NavGroup {
+  title: string
+  items: NavItem[]
+}
+
+export type SidebarNavItem = NavItem & {
+  items?: SidebarNavItem[]
+}
+
+export type DocumentationNavItem = NavItem & {
+  items?: DocumentationNavItem[]
+}
+
+const checkPermissions = (permissions: string[] | undefined, userPermissions: string[] | undefined) => {
+  if (!permissions) return true
+  if (!userPermissions) return false
+  return permissions.every(permission => userPermissions.includes(permission))
+}
+
+export const sidebarNavItems: SidebarNavItem[] = [
   {
-    name: "ዋና ገጽ",
-    href: "/",
-    icon: Home,
-    permissions: [],
+    title: "Dashboard",
+    titleAmharic: "ዳሽቦርድ",
+    href: "/dashboard",
+    icon: LayoutDashboard,
   },
   {
-    name: "ትዕዛዞች",
-    href: "/orders",
+    title: "Customers",
+    titleAmharic: "ደንበኞች",
+    href: "/customers",
+    icon: User,
+    permissions: ["view_customers"],
+  },
+  {
+    title: "Products",
+    titleAmharic: "ምርቶች",
+    href: "/products",
     icon: ShoppingCart,
-    permissions: ["view_orders"],
+    permissions: ["view_products"],
   },
   {
-    name: "ጠረጴዛዎች",
-    href: "/tables",
-    icon: Table,
-    permissions: ["manage_tables"],
+    title: "Purchase Orders",
+    titleAmharic: "የግዢ ትዕዛዞች",
+    href: "/purchase-orders",
+    icon: Receipt,
+    permissions: ["manage_purchase_orders"],
   },
   {
-    name: "ቦታ ማስያዝ",
-    href: "/reservations",
-    icon: Calendar,
-    permissions: ["manage_reservations"],
+    title: "Purchase Order Workflow",
+    titleAmharic: "የግዢ ትዕዛዝ ፍሰት",
+    href: "/purchase-orders/workflow",
+    icon: GitBranch,
+    permissions: ["manage_purchase_orders", "approve_orders"],
   },
   {
-    name: "ጥበቃ ዝርዝር",
-    href: "/waitlist",
-    icon: Clock,
-    permissions: ["manage_waitlist", "view_waitlist"],
+    title: "PO Templates",
+    titleAmharic: "የግዢ ቅጦች",
+    href: "/purchase-orders/templates", 
+    icon: FileTemplate,
+    permissions: ["manage_purchase_orders"],
   },
   {
-    name: "ክምችት",
-    href: "/inventory",
-    icon: Package,
-    permissions: ["manage_inventory", "view_inventory"],
-  },
-  {
-    name: "አቅራቢዎች",
-    href: "/suppliers",
-    icon: Truck,
-    permissions: ["manage_suppliers"],
-  },
-  {
-    name: "ኩሽና",
-    href: "/kitchen",
-    icon: ChefHat,
-    permissions: ["kitchen_access"],
-  },
-  {
-    name: "ሰራተኞች",
-    href: "/employees",
-    icon: Users,
-    permissions: ["manage_employees"],
-  },
-  {
-    name: "ስታቲስቲክስ",
-    href: "/stats",
-    icon: BarChart3,
-    permissions: ["view_analytics"],
-  },
-  {
-    name: "አስተዳደር",
-    href: "/admin",
+    title: "Settings",
+    titleAmharic: "ቅንብሮች",
+    href: "/settings",
     icon: Settings,
-    permissions: ["admin_access"],
   },
 ]
-
-export function SidebarNav() {
-  const pathname = usePathname()
-  const { user, hasPermission } = useAuth()
-
-  const filteredNavigation = navigation.filter((item) => {
-    if (item.permissions.length === 0) return true
-    return item.permissions.some((permission) => hasPermission(permission))
-  })
-
-  return (
-    <div className="flex h-full w-64 flex-col bg-white border-r">
-      <div className="flex h-16 items-center border-b px-6">
-        <UserCheck className="h-6 w-6 text-blue-600" />
-        <span className="ml-2 text-lg font-semibold">የምግብ ቤት POS</span>
-      </div>
-      <ScrollArea className="flex-1 px-3 py-4">
-        <nav className="space-y-2">
-          {filteredNavigation.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href
-
-            return (
-              <Link key={item.name} href={item.href}>
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  className={cn("w-full justify-start", isActive && "bg-blue-50 text-blue-700 hover:bg-blue-100")}
-                >
-                  <Icon className="mr-3 h-4 w-4" />
-                  {item.name}
-                </Button>
-              </Link>
-            )
-          })}
-        </nav>
-      </ScrollArea>
-      {user && (
-        <div className="border-t p-4">
-          <div className="flex items-center space-x-3">
-            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-              <span className="text-sm font-medium text-blue-700">{user.name.charAt(0).toUpperCase()}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-              <p className="text-xs text-gray-500 truncate">{user.role}</p>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
