@@ -20,6 +20,9 @@ export const restaurantInfo = {
   secondaryColor: "orange", // ሁለተኛ ቀለም
 }
 
+// የመመገቢያ ዘዴዎች
+export const diningModes = ["ዳይን ኢን", "ቴክ አዌይ", "ዴሊቨሪ", "ድራይቭ ትሩ"]
+
 // የጎን ማውጫ ምናሌዎች
 export const navItems = [
   { icon: Menu, label: "ምናሌ", color: `text-${restaurantInfo.primaryColor}-600` },

@@ -1,51 +1,35 @@
 "use client"
-import { Badge } from "@/components/ui/badge"
-import { Clock, Users, DollarSign, TrendingUp } from "lucide-react"
+
+import { Clock, Calendar } from "lucide-react"
 
 export function Footer() {
   const currentTime = new Date().toLocaleTimeString("am-ET", {
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
+  })
+
+  const currentDate = new Date().toLocaleDateString("am-ET", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   })
 
   return (
-    <footer className="bg-white border-t px-6 py-3">
+    <footer className="bg-white border-t border-gray-200 px-6 py-3">
       <div className="flex items-center justify-between">
-        {/* Left side - Quick stats */}
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-gray-500" />
-            <span className="text-sm font-medium">{currentTime}</span>
+        <div className="flex items-center space-x-6 text-sm text-gray-600">
+          <div className="flex items-center space-x-2">
+            <Clock className="h-4 w-4" />
+            <span>{currentTime}</span>
           </div>
-
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-blue-500" />
-            <span className="text-sm">ደንበኞች: </span>
-            <Badge variant="secondary">24</Badge>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-green-500" />
-            <span className="text-sm">ዛሬ ሽያጭ: </span>
-            <Badge variant="secondary">12,450 ብር</Badge>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-purple-500" />
-            <span className="text-sm">ትዕዛዞች: </span>
-            <Badge variant="secondary">47</Badge>
+          <div className="flex items-center space-x-2">
+            <Calendar className="h-4 w-4" />
+            <span>{currentDate}</span>
           </div>
         </div>
 
-        {/* Right side - System status */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span className="text-sm text-gray-600">ስርዓት ሁኔታ: ጥሩ</span>
-          </div>
-
-          <div className="text-xs text-gray-500">ቺሊ POS v1.0 | © 2024</div>
-        </div>
+        <div className="text-sm text-gray-500">ቺሊ POS v1.0 - የምግብ ቤት አስተዳደር ስርዓት</div>
       </div>
     </footer>
   )
