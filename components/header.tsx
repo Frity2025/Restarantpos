@@ -1,47 +1,57 @@
 "use client"
 
+import { Bell, Search, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Search, Bell, User, LogOut } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/contexts/auth-context"
-import { useCart } from "@/contexts/cart-context"
+import { ThemeSwitcher } from "@/components/theme-switcher"
 
 export function Header() {
   const { employee, logout } = useAuth()
-  const { itemCount } = useCart()
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-gray-900">ቺሊ POS</h1>
+    <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+      <div className="w-full flex-1">
+        <form>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input placeholder="ምግብ ፈልግ..." className="pl-10 w-64" />
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="ፈልግ..."
+              className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
+            />
           </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">3</Badge>
-          </Button>
-
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <p className="font-medium text-sm">{employee?.name}</p>
-              <p className="text-xs text-gray-500">{employee?.role}</p>
-            </div>
-            <Button variant="ghost" size="icon">
-              <User className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={logout}>
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
+        </form>
       </div>
+      <Button variant="outline" size="icon" className="ml-auto h-8 w-8 bg-transparent">
+        <Bell className="h-4 w-4" />
+        <span className="sr-only">Toggle notifications</span>
+      </Button>
+      <ThemeSwitcher />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="secondary" size="icon" className="rounded-full">
+            <User className="h-5 w-5" />
+            <span className="sr-only">Toggle user menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>{employee?.name}</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem>ቅንብሮች</DropdownMenuItem>
+          <DropdownMenuItem>ድጋፍ</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={logout}>ውጣ</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </header>
   )
 }

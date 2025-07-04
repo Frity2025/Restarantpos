@@ -1,27 +1,29 @@
 "use client"
 
 import type React from "react"
+
 import { useAuth } from "@/contexts/auth-context"
-import { LoginForm } from "./login-form"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ShieldX } from "lucide-react"
+import { LoginForm } from "@/components/login-form"
+import { useEffect, useState } from "react"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
   requiredPermission?: string
-  requiredRole?: string
+  requiredPermissions?: string[]
 }
 
-export function ProtectedRoute({ children, requiredPermission, requiredRole }: ProtectedRouteProps) {
-  const { employee, hasPermission, isLoading } = useAuth()
+export function ProtectedRoute({ children, requiredPermission, requiredPermissions }: ProtectedRouteProps) {
+  const { employee, isLoading, hasPermission } = useAuth()
+  const [mounted, setMounted] = useState(false)
 
-  if (isLoading) {
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p>እየጫን ነው...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     )
   }
@@ -30,28 +32,31 @@ export function ProtectedRoute({ children, requiredPermission, requiredRole }: P
     return <LoginForm />
   }
 
-  // Role check
-  if (requiredRole && employee.role !== requiredRole) {
+  // Check single permission
+  if (requiredPermission && !hasPermission(requiredPermission)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <Alert className="max-w-md">
-          <ShieldX className="h-4 w-4" />
-          <AlertDescription>ይህንን ገጽ ለማየት ፈቃድ የለዎትም።</AlertDescription>
-        </Alert>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">መዳረሻ ተከልክሏል</h1>
+          <p className="text-gray-600">ይህንን ገጽ ለማየት የሚያስፈልግ ፈቃድ የለዎትም።</p>
+        </div>
       </div>
     )
   }
 
-  // Permission check
-  if (requiredPermission && !hasPermission(requiredPermission)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <Alert className="max-w-md">
-          <ShieldX className="h-4 w-4" />
-          <AlertDescription>ይህንን ተግባር ለመፈጸም ፈቃድ የለዎትም።</AlertDescription>
-        </Alert>
-      </div>
-    )
+  // Check multiple permissions (user needs at least one)
+  if (requiredPermissions && requiredPermissions.length > 0) {
+    const hasAnyPermission = requiredPermissions.some((permission) => hasPermission(permission))
+    if (!hasAnyPermission) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-red-600 mb-4">መዳረሻ ተከልክሏል</h1>
+            <p className="text-gray-600">ይህንን ገጽ ለማየት የሚያስፈልግ ፈቃድ የለዎትም።</p>
+          </div>
+        </div>
+      )
+    }
   }
 
   return <>{children}</>

@@ -3,12 +3,12 @@
 import type React from "react"
 
 import { useState } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, ChefHat } from "lucide-react"
+import { Loader2, LogIn } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 
 export function LoginForm() {
@@ -21,21 +21,26 @@ export function LoginForm() {
     e.preventDefault()
     setError("")
 
+    if (!username || !password) {
+      setError("እባክዎ የተጠቃሚ ስም እና የይለፍ ቃል ያስገቡ")
+      return
+    }
+
     const result = await login(username, password)
     if (!result.success) {
-      setError(result.error || "ግባ አልተሳካም")
+      setError(result.error || "የመግቢያ ስህተት ተከስቷል")
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mb-4">
-            <ChefHat className="h-6 w-6 text-white" />
+        <CardHeader className="space-y-1">
+          <div className="flex items-center justify-center mb-4">
+            <LogIn className="h-12 w-12 text-blue-600" />
           </div>
-          <CardTitle className="text-2xl font-bold">ቺሊ POS</CardTitle>
-          <CardDescription>የምግብ ቤት አስተዳደር ስርዓት</CardDescription>
+          <CardTitle className="text-2xl font-bold text-center">ወደ ስርዓቱ ይግቡ</CardTitle>
+          <CardDescription className="text-center">የተጠቃሚ ስምዎን እና የይለፍ ቃልዎን ያስገቡ</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -47,7 +52,7 @@ export function LoginForm() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="የተጠቃሚ ስም ያስገቡ"
-                required
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -58,7 +63,7 @@ export function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="የይለፍ ቃል ያስገቡ"
-                required
+                disabled={isLoading}
               />
             </div>
             {error && (
@@ -77,18 +82,19 @@ export function LoginForm() {
               )}
             </Button>
           </form>
+
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm font-medium text-gray-700 mb-2">የሙከራ መለያዎች:</p>
-            <div className="space-y-1 text-xs text-gray-600">
-              <p>
+            <h3 className="text-sm font-medium text-gray-900 mb-2">የሙከራ መለያዎች:</h3>
+            <div className="text-xs text-gray-600 space-y-1">
+              <div>
                 <strong>አድሚን:</strong> admin / admin123
-              </p>
-              <p>
+              </div>
+              <div>
                 <strong>ገንዘብ ተቀባይ:</strong> cashier / cashier123
-              </p>
-              <p>
+              </div>
+              <div>
                 <strong>ኩሽና:</strong> kitchen / kitchen123
-              </p>
+              </div>
             </div>
           </div>
         </CardContent>
