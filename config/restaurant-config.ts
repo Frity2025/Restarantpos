@@ -1,151 +1,118 @@
-export interface RestaurantInfo {
-  name: string
-  address: string
-  phone: string
-  email: string
-  logo: string
-}
-
-export interface DiningMode {
-  id: string
-  name: string
-  icon: string
-  description: string
-}
-
-export interface FoodCategory {
-  id: string
-  name: string
-  description: string
-  icon: string
-}
-
-export interface FoodItem {
-  id: string
-  name: string
-  description: string
-  price: number
-  category: string
-  image: string
-  available: boolean
-  preparationTime: number
-}
-
-export const restaurantInfo: RestaurantInfo = {
-  name: "ቺሊ ምግብ ቤት",
-  address: "አዲስ አበባ፣ ኢትዮጵያ",
-  phone: "+251-11-123-4567",
-  email: "info@chilirestaurant.com",
-  logo: "/placeholder-logo.png",
-}
-
-export const diningModes: DiningMode[] = [
+export const foodItems = [
   {
-    id: "dine-in",
-    name: "በቤት ውስጥ",
-    icon: "utensils",
-    description: "በምግብ ቤት ውስጥ መመገብ",
-  },
-  {
-    id: "takeaway",
-    name: "ይዘው መሄድ",
-    icon: "shopping-bag",
-    description: "ይዘው ወደ ቤት መሄድ",
-  },
-  {
-    id: "delivery",
-    name: "ማድረስ",
-    icon: "truck",
-    description: "ወደ ቤት ማድረስ",
-  },
-]
-
-export const foodCategories: FoodCategory[] = [
-  {
-    id: "appetizers",
-    name: "ማነሻ ምግቦች",
-    description: "ለመጀመሪያ የሚቀርቡ ምግቦች",
-    icon: "cookie",
-  },
-  {
-    id: "main-dishes",
-    name: "ዋና ምግቦች",
-    description: "ዋና ዋና ምግቦች",
-    icon: "utensils",
-  },
-  {
-    id: "beverages",
-    name: "መጠጦች",
-    description: "ሙቅ እና ቀዝቃዛ መጠጦች",
-    icon: "coffee",
-  },
-  {
-    id: "desserts",
-    name: "ጣፋጭ ምግቦች",
-    description: "ከምግብ በኋላ የሚቀርቡ ጣፋጭ ምግቦች",
-    icon: "cake",
-  },
-]
-
-export const foodItems: FoodItem[] = [
-  {
-    id: "1",
-    name: "ዶሮ ወጥ",
-    description: "ባህላዊ የኢትዮጵያ ዶሮ ወጥ በእንጀራ",
-    price: 250,
-    category: "main-dishes",
-    image: "/placeholder.jpg",
+    id: "food-1",
+    title: "ዶሮ ወጥ",
+    description: "ባህላዊ የኢትዮጵያ ዶሮ ወጥ በቤርቤሬ እና በተለያዩ ቅመሞች የተቀመመ",
+    price: 350.0,
+    category: "ዋና ምግቦች",
+    type: "NON_VEG",
+    spicyLevel: 3,
+    preparationTime: 45,
+    ingredients: ["ዶሮ", "ቤርቤሬ", "ሽንኩርት", "ነጭ ሽንኩርት", "ዘይት", "እንቁላል"],
+    image: "/placeholder.svg?height=200&width=300",
     available: true,
-    preparationTime: 25,
   },
   {
-    id: "2",
-    name: "ክትፎ",
-    description: "ጥሬ ስጋ በሚጣ እና አያይብ",
-    price: 180,
-    category: "main-dishes",
-    image: "/placeholder.jpg",
-    available: true,
+    id: "food-2",
+    title: "ክትፎ",
+    description: "ጥሬ ስጋ በሚጣ እና በቅመሞች የተቀመመ",
+    price: 280.0,
+    category: "ዋና ምግቦች",
+    type: "NON_VEG",
+    spicyLevel: 4,
     preparationTime: 15,
+    ingredients: ["ጥሬ ስጋ", "ሚጣ", "ቤርቤሬ", "ካርዳሞም"],
+    image: "/placeholder.svg?height=200&width=300",
+    available: true,
   },
   {
-    id: "3",
-    name: "ሻይ",
-    description: "ባህላዊ የኢትዮጵያ ሻይ",
-    price: 25,
-    category: "beverages",
-    image: "/placeholder.jpg",
+    id: "food-3",
+    title: "ሽሮ ወጥ",
+    description: "የተፈጨ አተር ወጥ በቅመሞች የተቀመመ",
+    price: 120.0,
+    category: "ዋና ምግቦች",
+    type: "VEG",
+    spicyLevel: 2,
+    preparationTime: 30,
+    ingredients: ["ሽሮ", "ሽንኩርት", "ነጭ ሽንኩርት", "ዘይት", "ቤርቤሬ"],
+    image: "/placeholder.svg?height=200&width=300",
     available: true,
-    preparationTime: 5,
   },
   {
-    id: "4",
-    name: "ቡና",
-    description: "ትኩስ የኢትዮጵያ ቡና",
-    price: 35,
-    category: "beverages",
-    image: "/placeholder.jpg",
+    id: "food-4",
+    title: "ፍርፍር",
+    description: "የተቀላቀሉ ወጦች በኢንጀራ ላይ",
+    price: 200.0,
+    category: "ዋና ምግቦች",
+    type: "VEG",
+    spicyLevel: 2,
+    preparationTime: 25,
+    ingredients: ["ሽሮ", "ምስር", "ጎመን", "ኢንጀራ"],
+    image: "/placeholder.svg?height=200&width=300",
     available: true,
+  },
+  {
+    id: "food-5",
+    title: "ቡና",
+    description: "ባህላዊ የኢትዮጵያ ቡና",
+    price: 25.0,
+    category: "መጠጦች",
+    type: "VEG",
+    spicyLevel: 0,
     preparationTime: 10,
+    ingredients: ["የቡና ፍሬ", "ውሃ", "ስኳር"],
+    image: "/placeholder.svg?height=200&width=300",
+    available: true,
   },
   {
-    id: "5",
-    name: "ሳምቡሳ",
-    description: "የተጠበሰ ሳምቡሳ በስጋ ወይም በአትክልት",
-    price: 15,
-    category: "appetizers",
-    image: "/placeholder.jpg",
-    available: true,
-    preparationTime: 8,
-  },
-  {
-    id: "6",
-    name: "ሙዝ ኬክ",
-    description: "ቤት ውስጥ የተሰራ ሙዝ ኬክ",
-    price: 45,
-    category: "desserts",
-    image: "/placeholder.jpg",
-    available: true,
+    id: "food-6",
+    title: "ሻይ",
+    description: "ሞቅ ያለ ሻይ በስኳር",
+    price: 15.0,
+    category: "መጠጦች",
+    type: "VEG",
+    spicyLevel: 0,
     preparationTime: 5,
+    ingredients: ["ሻይ", "ውሃ", "ስኳር", "ወተት"],
+    image: "/placeholder.svg?height=200&width=300",
+    available: true,
   },
+  {
+    id: "food-7",
+    title: "ቁርስ ኮምቦ",
+    description: "እንቁላል፣ ዳቦ እና ሻይ",
+    price: 85.0,
+    category: "ቁርስ",
+    type: "VEG",
+    spicyLevel: 0,
+    preparationTime: 15,
+    ingredients: ["እንቁላል", "ዳቦ", "ሻይ", "ቅቤ"],
+    image: "/placeholder.svg?height=200&width=300",
+    available: true,
+  },
+  {
+    id: "food-8",
+    title: "ሾርባ",
+    description: "ሞቅ ያለ የአትክልት ሾርባ",
+    price: 65.0,
+    category: "ሾርባዎች",
+    type: "VEG",
+    spicyLevel: 1,
+    preparationTime: 20,
+    ingredients: ["ካሮት", "ድንች", "ሽንኩርት", "ቲማቲም"],
+    image: "/placeholder.svg?height=200&width=300",
+    available: true,
+  },
+]
+
+export const diningModes = [
+  { id: "dine-in", name: "በሬስቶራንት ውስጥ", icon: "🍽️" },
+  { id: "takeaway", name: "ይዘው ይሂዱ", icon: "🥡" },
+  { id: "delivery", name: "ማድረስ", icon: "🚚" },
+]
+
+export const paymentTypes = [
+  { id: "cash", name: "ጥሬ ገንዘብ", icon: "💵" },
+  { id: "card", name: "ካርድ", icon: "💳" },
+  { id: "mobile", name: "ሞባይል ክፍያ", icon: "📱" },
 ]

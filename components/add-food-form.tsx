@@ -5,10 +5,12 @@ import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { X, Plus } from "lucide-react"
 import { foodManager } from "@/lib/food-management"
 
 interface AddFoodFormProps {
@@ -23,66 +25,123 @@ export function AddFoodForm({ onClose, onFoodAdded }: AddFoodFormProps) {
     price: "",
     category: "",
     type: "",
-    spicyLevel: "0",
+    spicyLevel: 0,
     preparationTime: "",
-    ingredients: "",
-    allergens: "",
+    ingredients: [] as string[],
     image: "",
   })
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-
-    const newFood = {
-      ...formData,
-      price: Number.parseFloat(formData.price),
-      spicyLevel: Number.parseInt(formData.spicyLevel),
-      preparationTime: Number.parseInt(formData.preparationTime),
-      ingredients: formData.ingredients.split(",").map((item) => item.trim()),
-      allergens: formData.allergens
-        .split(",")
-        .map((item) => item.trim())
-        .filter((item) => item),
-    }
-
-    foodManager.addFood(newFood)
-    onFoodAdded()
-    onClose()
-  }
+  const [currentIngredient, setCurrentIngredient] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const categories = ["ዋና ምግቦች", "ቁርስ", "ሾርባዎች", "መጠጦች", "ፈጣን ምግቦች"]
-  const types = [
-    { value: "VEG", label: "አትክልታዊ" },
-    { value: "NON_VEG", label: "ስጋ" },
-    { value: "FISH", label: "ዓሳ" },
-    { value: "DAIRY", label: "የወተት ተዋጽኦ" },
-  ]
+  const foodTypes = ["VEG", "NON_VEG", "VEGAN"]
+
+  const handleInputChange = (field: string, value: string | number) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
+  const addIngredient = () => {
+    if (currentIngredient.trim() && !formData.ingredients.includes(currentIngredient.trim())) {
+      setFormData((prev) => ({
+        ...prev,
+        ingredients: [...prev.ingredients, currentIngredient.trim()],
+      }))
+      setCurrentIngredient("")
+    }
+  }
+
+  const removeIngredient = (ingredient: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      ingredients: prev.ingredients.filter((ing) => ing !== ingredient),
+    }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    try {
+      // Validation
+      if (!formData.title.trim()) {
+        throw new Error("Food title is required")
+      }
+      if (!formData.price || Number.parseFloat(formData.price) <= 0) {
+        throw new Error("Valid price is required")
+      }
+      if (!formData.category) {
+        throw new Error("Category is required")
+      }
+      if (!formData.type) {
+        throw new Error("Food type is required")
+      }
+
+      const newFood = {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        price: Number.parseFloat(formData.price),
+        category: formData.category,
+        type: formData.type,
+        spicyLevel: formData.spicyLevel,
+        preparationTime: Number.parseInt(formData.preparationTime) || 15,
+        ingredients: formData.ingredients,
+        image: formData.image || "/placeholder.svg?height=200&width=300",
+        available: true,
+      }
+
+      foodManager.addFood(newFood)
+      onFoodAdded()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add food")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>አዲስ ምግብ ጨምር</CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle>አዲስ ምግብ ጨምር</CardTitle>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+            <p className="text-red-800 text-sm">{error}</p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="title">የምግብ ስም</Label>
+              <Label htmlFor="title">የምግብ ስም *</Label>
               <Input
                 id="title"
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) => handleInputChange("title", e.target.value)}
+                placeholder="ምግቡን ስም ያስገቡ"
                 required
               />
             </div>
             <div>
-              <Label htmlFor="price">ዋጋ (ብር)</Label>
+              <Label htmlFor="price">ዋጋ (ብር) *</Label>
               <Input
                 id="price"
                 type="number"
                 step="0.01"
+                min="0"
                 value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                onChange={(e) => handleInputChange("price", e.target.value)}
+                placeholder="0.00"
                 required
               />
             </div>
@@ -93,18 +152,16 @@ export function AddFoodForm({ onClose, onFoodAdded }: AddFoodFormProps) {
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              required
+              onChange={(e) => handleInputChange("description", e.target.value)}
+              placeholder="የምግቡን መግለጫ ያስገቡ"
+              rows={3}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="category">ምድብ</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
-              >
+              <Label>ምድብ *</Label>
+              <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="ምድብ ይምረጡ" />
                 </SelectTrigger>
@@ -118,81 +175,90 @@ export function AddFoodForm({ onClose, onFoodAdded }: AddFoodFormProps) {
               </Select>
             </div>
             <div>
-              <Label htmlFor="type">አይነት</Label>
-              <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+              <Label>የምግብ አይነት *</Label>
+              <Select value={formData.type} onValueChange={(value) => handleInputChange("type", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="አይነት ይምረጡ" />
                 </SelectTrigger>
                 <SelectContent>
-                  {types.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="VEG">አትክልታዊ</SelectItem>
+                  <SelectItem value="NON_VEG">ስጋ</SelectItem>
+                  <SelectItem value="VEGAN">ቪጋን</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="spicyLevel">የቅመም ደረጃ (0-5)</Label>
-              <Input
-                id="spicyLevel"
-                type="number"
-                min="0"
-                max="5"
-                value={formData.spicyLevel}
-                onChange={(e) => setFormData({ ...formData, spicyLevel: e.target.value })}
-              />
             </div>
             <div>
               <Label htmlFor="preparationTime">የዝግጅት ጊዜ (ደቂቃ)</Label>
               <Input
                 id="preparationTime"
                 type="number"
+                min="1"
                 value={formData.preparationTime}
-                onChange={(e) => setFormData({ ...formData, preparationTime: e.target.value })}
-                required
+                onChange={(e) => handleInputChange("preparationTime", e.target.value)}
+                placeholder="15"
               />
             </div>
           </div>
 
           <div>
-            <Label htmlFor="ingredients">ንጥረ ነገሮች (በኮማ ይለዩ)</Label>
-            <Input
-              id="ingredients"
-              value={formData.ingredients}
-              onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })}
-              placeholder="ምሳሌ: እንጀራ, ዶሮ, በርበሬ"
-              required
-            />
+            <Label>የቅመም ደረጃ</Label>
+            <div className="flex gap-2 mt-2">
+              {[0, 1, 2, 3, 4, 5].map((level) => (
+                <Button
+                  key={level}
+                  type="button"
+                  variant={formData.spicyLevel === level ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleInputChange("spicyLevel", level)}
+                >
+                  {level === 0 ? "ምንም" : "🌶️".repeat(level)}
+                </Button>
+              ))}
+            </div>
           </div>
 
           <div>
-            <Label htmlFor="allergens">አለርጂ አስከሳሾች (በኮማ ይለዩ)</Label>
-            <Input
-              id="allergens"
-              value={formData.allergens}
-              onChange={(e) => setFormData({ ...formData, allergens: e.target.value })}
-              placeholder="ምሳሌ: ግሉተን, ወተት"
-            />
+            <Label>ንጥረ ነገሮች</Label>
+            <div className="flex gap-2 mt-2">
+              <Input
+                value={currentIngredient}
+                onChange={(e) => setCurrentIngredient(e.target.value)}
+                placeholder="ንጥረ ነገር ያስገቡ"
+                onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addIngredient())}
+              />
+              <Button type="button" onClick={addIngredient} size="sm">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {formData.ingredients.map((ingredient) => (
+                <Badge key={ingredient} variant="secondary" className="flex items-center gap-1">
+                  {ingredient}
+                  <button
+                    type="button"
+                    onClick={() => removeIngredient(ingredient)}
+                    className="ml-1 hover:text-red-600"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
           </div>
 
           <div>
-            <Label htmlFor="image">የምስል አድራሻ</Label>
+            <Label htmlFor="image">የምግብ ምስል URL</Label>
             <Input
               id="image"
-              type="url"
               value={formData.image}
-              onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+              onChange={(e) => handleInputChange("image", e.target.value)}
               placeholder="https://example.com/image.jpg"
             />
           </div>
 
           <div className="flex gap-2 pt-4">
-            <Button type="submit" className="bg-green-600 hover:bg-green-700">
-              ምግብ ጨምር
+            <Button type="submit" disabled={loading} className="flex-1">
+              {loading ? "እየጨመረ..." : "ምግብ ጨምር"}
             </Button>
             <Button type="button" variant="outline" onClick={onClose}>
               ሰርዝ
