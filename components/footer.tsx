@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { Badge } from "@/components/ui/badge"
 import { Clock, Calendar } from "lucide-react"
+import { useEffect, useState } from "react"
 
 export function Footer() {
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -31,19 +32,23 @@ export function Footer() {
   }
 
   return (
-    <footer className="bg-white border-t border-gray-200 px-6 py-3">
+    <footer className="bg-white border-t px-6 py-3">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4 text-sm text-gray-600">
-          <div className="flex items-center space-x-1">
-            <Clock className="h-4 w-4" />
-            <span>{formatTime(currentTime)}</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <Calendar className="h-4 w-4" />
-            <span>{formatDate(currentTime)}</span>
-          </div>
+        <div className="flex items-center gap-4">
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {formatTime(currentTime)}
+          </Badge>
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            {formatDate(currentTime)}
+          </Badge>
         </div>
-        <div className="text-sm text-gray-500">ቺሊ POS v1.0 - © 2024</div>
+
+        <div className="flex items-center gap-4">
+          <Badge variant="secondary">ስሪት 1.0.0</Badge>
+          <p className="text-sm text-gray-500">© 2024 የኢትዮጵያ ምግብ ቤት POS ስርዓት</p>
+        </div>
       </div>
     </footer>
   )

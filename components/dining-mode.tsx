@@ -7,14 +7,21 @@ import { Badge } from "@/components/ui/badge"
 import { Utensils, ShoppingBag, Truck } from "lucide-react"
 import { diningModes } from "@/config/restaurant-config"
 
-const iconMap = {
-  utensils: Utensils,
-  "shopping-bag": ShoppingBag,
-  truck: Truck,
-}
-
 export function DiningMode() {
   const [selectedMode, setSelectedMode] = useState("dine-in")
+
+  const getIcon = (iconName: string) => {
+    switch (iconName) {
+      case "utensils":
+        return Utensils
+      case "shopping-bag":
+        return ShoppingBag
+      case "truck":
+        return Truck
+      default:
+        return Utensils
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -25,7 +32,7 @@ export function DiningMode() {
 
       <div className="grid grid-cols-3 gap-3">
         {diningModes.map((mode) => {
-          const Icon = iconMap[mode.icon as keyof typeof iconMap]
+          const Icon = getIcon(mode.icon)
           const isSelected = selectedMode === mode.id
 
           return (

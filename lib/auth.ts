@@ -1,75 +1,51 @@
-import type { Employee } from "@/types/auth"
-
-// Sample employees for demo
-const employees: Employee[] = [
+// Demo authentication data
+export const demoEmployees = [
   {
     id: "1",
-    firstName: "አህመድ",
-    lastName: "አሊ",
-    email: "admin@restaurant.com",
-    phone: "+251911123456",
-    role: "admin",
-    password: "admin123",
-    isActive: true,
-    createdAt: new Date(),
-    permissions: [],
-    hireDate: new Date(),
-    name: "አህመድ አሊ",
     username: "admin",
+    password: "admin123",
+    name: "አድሚን ተጠቃሚ",
+    role: "admin",
+    permissions: ["all"],
   },
   {
     id: "2",
-    firstName: "ፋጢማ",
-    lastName: "መሀመድ",
-    email: "cashier@restaurant.com",
-    phone: "+251911123457",
-    role: "cashier",
-    password: "cashier123",
-    isActive: true,
-    createdAt: new Date(),
-    permissions: [],
-    hireDate: new Date(),
-    name: "ፋጢማ መሀመድ",
     username: "cashier",
+    password: "cashier123",
+    name: "ገንዘብ ተቀባይ",
+    role: "cashier",
+    permissions: ["pos_view", "pos_create", "orders_view"],
   },
   {
     id: "3",
-    firstName: "ዳዊት",
-    lastName: "ተስፋዬ",
-    email: "kitchen@restaurant.com",
-    phone: "+251911123458",
-    role: "kitchen",
-    password: "kitchen123",
-    isActive: true,
-    createdAt: new Date(),
-    permissions: [],
-    hireDate: new Date(),
-    name: "ዳዊት ተስፋዬ",
     username: "kitchen",
+    password: "kitchen123",
+    name: "ኩሽና ሰራተኛ",
+    role: "kitchen",
+    permissions: ["kitchen_view", "orders_view", "orders_update"],
   },
 ]
 
-export async function authenticateUser(username: string, password: string): Promise<Employee | null> {
+export async function authenticateUser(username: string, password: string) {
   // Simulate API call delay
   await new Promise((resolve) => setTimeout(resolve, 1000))
 
-  const employee = employees.find((emp) => emp.username === username && emp.password === password && emp.isActive)
+  const employee = demoEmployees.find((emp) => emp.username === username && emp.password === password)
 
-  return employee || null
-}
-
-export function hasPermission(employee: Employee, permission: string): boolean {
-  // Admin has all permissions
-  if (employee.role === "admin") return true
-
-  // Define role-based permissions
-  const rolePermissions: Record<string, string[]> = {
-    cashier: ["pos_view", "orders_view", "payments_view"],
-    kitchen: ["kitchen_view", "orders_view"],
-    waiter: ["pos_view", "orders_view", "tables_view"],
-    manager: ["pos_view", "orders_view", "payments_view", "reports_view", "employees_view"],
+  if (employee) {
+    return {
+      success: true,
+      employee: {
+        id: employee.id,
+        name: employee.name,
+        role: employee.role,
+        permissions: employee.permissions,
+      },
+    }
   }
 
-  const permissions = rolePermissions[employee.role] || []
-  return permissions.includes(permission)
+  return {
+    success: false,
+    error: "የተጠቃሚ ስም ወይም የይለፍ ቃል ትክክል አይደለም",
+  }
 }
