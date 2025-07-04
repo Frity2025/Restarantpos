@@ -1,26 +1,89 @@
-import { Search, Share2 } from "lucide-react"
-import { Input } from "@/components/ui/input"
+"use client"
+
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Bell, Settings, LogOut, User, ChefHat } from "lucide-react"
+import { ThemeSwitcher } from "./theme-switcher"
+import { useAuth } from "@/contexts/auth-context"
 
-interface HeaderProps {
-  tableNumber?: string
-  customerName?: string
-}
+export function Header() {
+  const { employee, logout } = useAuth()
 
-export function Header({ tableNumber = "4", customerName = "ፍሎይድ ማይልስ" }: HeaderProps) {
   return (
-    <div className="bg-white p-4 flex items-center gap-4 border-b">
-      <div className="flex-1 relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-        <Input type="text" placeholder="ምግብ ፈልግ..." className="pl-10 w-full" />
+    <header className="bg-white border-b px-6 py-4">
+      <div className="flex items-center justify-between">
+        {/* Left side - Logo and title */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+              <ChefHat className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">ቺሊ POS</h1>
+              <p className="text-sm text-gray-500">ምግብ ቤት አስተዳደር ስርዓት</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Right side - Actions and user menu */}
+        <div className="flex items-center gap-4">
+          {/* Notifications */}
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-5 w-5" />
+            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">3</Badge>
+          </Button>
+
+          {/* Theme Switcher */}
+          <ThemeSwitcher />
+
+          {/* User Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex items-center gap-2 px-3">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src="/placeholder-user.jpg" />
+                  <AvatarFallback>
+                    {employee?.firstName?.[0]}
+                    {employee?.lastName?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="text-left">
+                  <p className="text-sm font-medium">
+                    {employee?.firstName} {employee?.lastName}
+                  </p>
+                  <p className="text-xs text-gray-500">{employee?.role}</p>
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>የእኔ መለያ</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                <span>መገለጫ</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>ቅንብሮች</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={logout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>ውጣ</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        <span className="font-semibold">ጠረጴዛ {tableNumber}</span>
-        <span className="text-gray-500 text-sm">{customerName}</span>
-      </div>
-      <Button variant="ghost" size="icon">
-        <Share2 className="h-5 w-5" />
-      </Button>
-    </div>
+    </header>
   )
 }

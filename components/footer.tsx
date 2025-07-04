@@ -1,32 +1,52 @@
-import { restaurantInfo } from "@/config/restaurant-config"
+"use client"
+import { Badge } from "@/components/ui/badge"
+import { Clock, Users, DollarSign, TrendingUp } from "lucide-react"
 
 export function Footer() {
-  const orders = [
-    { table: "T1", items: 6, kitchen: "ኩሽና", status: "በሂደት ላይ" },
-    { table: "T2", items: 4, kitchen: "ኩሽና" },
-    { table: "T3", items: 3, kitchen: "ኩሽና" },
-  ]
+  const currentTime = new Date().toLocaleTimeString("am-ET", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })
 
   return (
-    <div className="bg-white border-t p-4 flex gap-4 flex-wrap">
-      {orders.map((order, index) => (
-        <div
-          key={index}
-          className={`flex items-center gap-3 bg-${restaurantInfo.secondaryColor}-50 rounded-lg p-3 flex-1 min-w-[200px]`}
-        >
-          <div
-            className={`w-8 h-8 bg-${restaurantInfo.secondaryColor}-400 rounded-full flex items-center justify-center text-white font-medium`}
-          >
-            {order.table}
+    <footer className="bg-white border-t px-6 py-3">
+      <div className="flex items-center justify-between">
+        {/* Left side - Quick stats */}
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-medium">{currentTime}</span>
           </div>
-          <div>
-            <div className="text-sm font-medium">
-              {order.items} ምግቦች → {order.kitchen}
-            </div>
-            {order.status && <div className={`text-xs text-${restaurantInfo.secondaryColor}-600`}>{order.status}</div>}
+
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-blue-500" />
+            <span className="text-sm">ደንበኞች: </span>
+            <Badge variant="secondary">24</Badge>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-green-500" />
+            <span className="text-sm">ዛሬ ሽያጭ: </span>
+            <Badge variant="secondary">12,450 ብር</Badge>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-purple-500" />
+            <span className="text-sm">ትዕዛዞች: </span>
+            <Badge variant="secondary">47</Badge>
           </div>
         </div>
-      ))}
-    </div>
+
+        {/* Right side - System status */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-sm text-gray-600">ስርዓት ሁኔታ: ጥሩ</span>
+          </div>
+
+          <div className="text-xs text-gray-500">ቺሊ POS v1.0 | © 2024</div>
+        </div>
+      </div>
+    </footer>
   )
 }

@@ -5,19 +5,20 @@ import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Eye, EyeOff, LogIn } from "lucide-react"
+import { ChefHat, LogIn } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
-import { restaurantInfo } from "@/config/restaurant-config"
 
 export function LoginForm() {
-  const [credentials, setCredentials] = useState({ email: "", password: "" })
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
   const { login } = useAuth()
+  const [credentials, setCredentials] = useState({
+    username: "",
+    password: "",
+  })
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,12 +26,12 @@ export function LoginForm() {
     setError("")
 
     try {
-      const response = await login(credentials)
-      if (!response.success) {
-        setError(response.message)
+      const success = await login(credentials.username, credentials.password)
+      if (!success) {
+        setError("የተሳሳተ የተጠቃሚ ስም ወይም የይለፍ ቃል")
       }
-    } catch (err) {
-      setError("የመግቢያ ስህተት ተከስቷል")
+    } catch (error) {
+      setError("የመግቢያ ስህተት ተፈጥሯል")
     } finally {
       setIsLoading(false)
     }
@@ -41,50 +42,41 @@ export function LoginForm() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <img src={restaurantInfo.logo || "/placeholder.svg"} alt="Logo" className="w-16 h-16" />
+            <div className="w-16 h-16 bg-green-600 rounded-lg flex items-center justify-center">
+              <ChefHat className="h-8 w-8 text-white" />
+            </div>
           </div>
-          <CardTitle className="text-2xl font-bold">{restaurantInfo.name}</CardTitle>
-          <p className="text-gray-600">የሰራተኞች መግቢያ</p>
+          <CardTitle className="text-2xl">ቺሊ POS</CardTitle>
+          <CardDescription>ወደ ምግብ ቤት አስተዳደር ስርዓት ይግቡ</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="email">ኢሜይል</Label>
+            <div className="space-y-2">
+              <Label htmlFor="username">የተጠቃሚ ስም</Label>
               <Input
-                id="email"
-                type="email"
-                value={credentials.email}
-                onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
-                placeholder="your@email.com"
+                id="username"
+                type="text"
+                placeholder="የተጠቃሚ ስም ያስገቡ"
+                value={credentials.username}
+                onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
                 required
               />
             </div>
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="password">የይለፍ ቃል</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={credentials.password}
-                  onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                  placeholder="የይለፍ ቃልዎን ያስገቡ"
-                  required
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-full px-3"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
+              <Input
+                id="password"
+                type="password"
+                placeholder="የይለፍ ቃል ያስገቡ"
+                value={credentials.password}
+                onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+                required
+              />
             </div>
 
             {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+              <Alert className="border-red-200 bg-red-50">
+                <AlertDescription className="text-red-800">{error}</AlertDescription>
               </Alert>
             )}
 
@@ -100,22 +92,13 @@ export function LoginForm() {
             </Button>
           </form>
 
-          {/* ለሙከራ ዓላማ */}
+          {/* Demo credentials */}
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm font-medium mb-2">የሙከራ መግቢያዎች:</p>
-            <div className="text-xs space-y-1">
-              <p>
-                <strong>አስተዳዳሪ:</strong> admin@restaurant.com / admin123
-              </p>
-              <p>
-                <strong>ሥራ አስኪያጅ:</strong> manager@restaurant.com / manager123
-              </p>
-              <p>
-                <strong>ገንዘብ ተቀባይ:</strong> cashier@restaurant.com / cashier123
-              </p>
-              <p>
-                <strong>አስተናጋጅ:</strong> waiter@restaurant.com / waiter123
-              </p>
+            <p className="text-sm font-medium text-gray-700 mb-2">የሙከራ መለያዎች:</p>
+            <div className="text-xs text-gray-600 space-y-1">
+              <p>አስተዳዳሪ: admin / admin123</p>
+              <p>ሰራተኛ: waiter1 / waiter123</p>
+              <p>ኩሽና: kitchen1 / kitchen123</p>
             </div>
           </div>
         </CardContent>
