@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useAuth } from "@/contexts/auth-context"
+import { Separator } from "@/components/ui/separator"
 import {
   Home,
   ShoppingCart,
@@ -15,150 +15,151 @@ import {
   Settings,
   Calendar,
   Clock,
-  Table,
-  UserCheck,
   Package,
   Truck,
-  Receipt,
-  GitBranch,
-  FileIcon as FileTemplate,
+  FileText,
+  ClipboardList,
+  Workflow,
 } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
+import { userHasPermission } from "@/config/roles-permissions"
 
-const navigation = [
+const navigationItems = [
   {
-    name: "ዋና ገጽ",
+    title: "ዋና ገጽ",
     href: "/",
     icon: Home,
     permissions: [],
   },
   {
-    name: "ትዕዛዞች",
+    title: "ትዕዛዞች",
     href: "/orders",
     icon: ShoppingCart,
     permissions: ["view_orders"],
   },
   {
-    name: "ጠረጴዛዎች",
-    href: "/tables",
-    icon: Table,
-    permissions: ["manage_tables"],
-  },
-  {
-    name: "ቦታ ማስያዝ",
-    href: "/reservations",
-    icon: Calendar,
-    permissions: ["manage_reservations"],
-  },
-  {
-    name: "ጥበቃ ዝርዝር",
-    href: "/waitlist",
-    icon: Clock,
-    permissions: ["manage_waitlist", "view_waitlist"],
-  },
-  {
-    name: "ክምችት",
-    href: "/inventory",
-    icon: Package,
-    permissions: ["manage_inventory", "view_inventory"],
-  },
-  {
-    name: "አቅራቢዎች",
-    href: "/suppliers",
-    icon: Truck,
-    permissions: ["manage_suppliers"],
-  },
-  {
-    name: "የግዢ ትዕዛዞች",
-    href: "/purchase-orders",
-    icon: Receipt,
-    permissions: ["manage_purchase_orders", "view_purchase_orders"],
-  },
-  {
-    name: "የግዢ ፍሰት",
-    href: "/purchase-orders/workflow",
-    icon: GitBranch,
-    permissions: ["manage_purchase_orders", "approve_orders"],
-  },
-  {
-    name: "የግዢ ቅጦች",
-    href: "/purchase-orders/templates",
-    icon: FileTemplate,
-    permissions: ["manage_purchase_orders"],
-  },
-  {
-    name: "ኩሽና",
+    title: "ኩሽና",
     href: "/kitchen",
     icon: ChefHat,
-    permissions: ["kitchen_access"],
+    permissions: ["view_orders"],
   },
   {
-    name: "ሰራተኞች",
+    title: "ጠረጴዛዎች",
+    href: "/tables",
+    icon: Calendar,
+    permissions: ["view_tables"],
+  },
+  {
+    title: "ቦታ ማስያዝ",
+    href: "/reservations",
+    icon: Calendar,
+    permissions: ["view_reservations"],
+  },
+  {
+    title: "የደንበኞች ጥበቃ",
+    href: "/waitlist",
+    icon: Clock,
+    permissions: ["view_waitlist"],
+  },
+  {
+    title: "ክምችት",
+    href: "/inventory",
+    icon: Package,
+    permissions: ["view_inventory"],
+  },
+  {
+    title: "አቅራቢዎች",
+    href: "/suppliers",
+    icon: Truck,
+    permissions: ["view_suppliers"],
+  },
+  {
+    title: "የግዢ ትዕዛዞች",
+    href: "/purchase-orders",
+    icon: FileText,
+    permissions: ["view_purchase_orders"],
+  },
+  {
+    title: "የግዢ ፍሰት",
+    href: "/purchase-orders/workflow",
+    icon: Workflow,
+    permissions: ["approve_purchase_orders"],
+  },
+  {
+    title: "የግዢ ቅጦች",
+    href: "/purchase-orders/templates",
+    icon: ClipboardList,
+    permissions: ["manage_purchase_templates"],
+  },
+  {
+    title: "ሰራተኞች",
     href: "/employees",
     icon: Users,
-    permissions: ["manage_employees"],
+    permissions: ["view_employees"],
   },
   {
-    name: "ስታቲስቲክስ",
+    title: "ስታቲስቲክስ",
     href: "/stats",
     icon: BarChart3,
-    permissions: ["view_analytics"],
+    permissions: ["view_stats"],
   },
   {
-    name: "አስተዳደር",
+    title: "አስተዳደር",
     href: "/admin",
     icon: Settings,
-    permissions: ["admin_access"],
+    permissions: ["manage_system_settings"],
   },
 ]
 
 export function SidebarNav() {
   const pathname = usePathname()
-  const { user, hasPermission } = useAuth()
+  const { user } = useAuth()
 
-  const filteredNavigation = navigation.filter((item) => {
+  const filteredItems = navigationItems.filter((item) => {
     if (item.permissions.length === 0) return true
-    return item.permissions.some((permission) => hasPermission(permission))
+    if (!user) return false
+    return item.permissions.some((permission) => userHasPermission(user.role, permission))
   })
 
   return (
-    <div className="flex h-full w-64 flex-col bg-white border-r">
+    <div className="flex h-full w-64 flex-col bg-gray-50 dark:bg-gray-900">
       <div className="flex h-16 items-center border-b px-6">
-        <UserCheck className="h-6 w-6 text-blue-600" />
-        <span className="ml-2 text-lg font-semibold">የምግብ ቤት POS</span>
+        <h2 className="text-lg font-semibold">የምግብ ቤት POS</h2>
       </div>
       <ScrollArea className="flex-1 px-3 py-4">
         <nav className="space-y-2">
-          {filteredNavigation.map((item) => {
+          {filteredItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href
 
             return (
-              <Link key={item.name} href={item.href}>
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  className={cn("w-full justify-start", isActive && "bg-blue-50 text-blue-700 hover:bg-blue-100")}
-                >
-                  <Icon className="mr-3 h-4 w-4" />
-                  {item.name}
-                </Button>
-              </Link>
+              <Button
+                key={item.href}
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn("w-full justify-start", isActive && "bg-secondary")}
+                asChild
+              >
+                <Link href={item.href}>
+                  <Icon className="mr-2 h-4 w-4" />
+                  {item.title}
+                </Link>
+              </Button>
             )
           })}
         </nav>
-      </ScrollArea>
-      {user && (
-        <div className="border-t p-4">
-          <div className="flex items-center space-x-3">
-            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-              <span className="text-sm font-medium text-blue-700">{user.name.charAt(0).toUpperCase()}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-              <p className="text-xs text-gray-500 truncate">{user.role}</p>
-            </div>
-          </div>
+        <Separator className="my-4" />
+        <div className="space-y-2">
+          <p className="px-3 text-xs font-medium text-muted-foreground">ተጨማሪ ባህሪያት</p>
+          {user && userHasPermission(user.role, "manage_food") && (
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link href="/admin">
+                <Settings className="mr-2 h-4 w-4" />
+                የምግብ አስተዳደር
+              </Link>
+            </Button>
+          )}
         </div>
-      )}
+      </ScrollArea>
     </div>
   )
 }

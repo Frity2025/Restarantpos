@@ -13,7 +13,7 @@ class WaitlistService {
     partySize: number
     priority?: WaitlistPriority
     specialRequests?: string
-    createdBy: string
+    createdBy?: string
   }): WaitlistEntry {
     const estimatedWaitTime = this.calculateEstimatedWaitTime(data.partySize, data.priority || "normal")
 
@@ -29,7 +29,7 @@ class WaitlistService {
       specialRequests: data.specialRequests,
       createdAt: new Date(),
       updatedAt: new Date(),
-      createdBy: data.createdBy,
+      createdBy: data.createdBy || "system",
     }
 
     this.waitlistEntries.unshift(entry)
@@ -242,3 +242,4 @@ class WaitlistService {
 }
 
 export const waitlistService = new WaitlistService()
+export const waitlistManager = waitlistService // Export both names for compatibility
