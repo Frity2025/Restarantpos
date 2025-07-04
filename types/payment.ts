@@ -1,86 +1,77 @@
-export interface PaymentMethod {
+export type PaymentMethod = "cash" | "mobile_money" | "card" | "bank_transfer" | "credit" | "voucher"
+
+export type PaymentStatus = "pending" | "processing" | "completed" | "failed" | "cancelled" | "refunded"
+
+export interface PaymentProvider {
   id: string
   name: string
-  type: "cash" | "card" | "mobile" | "bank" | "credit" | "voucher"
-  enabled: boolean
-  processingFee?: number
-  maxAmount?: number
-  minAmount?: number
-  icon?: string
+  type: PaymentMethod
+  isActive: boolean
+  processingFee: number
+  successRate: number
+  logo?: string
 }
 
-export interface PaymentTransaction {
+export interface Payment {
   id: string
   orderId: string
   amount: number
-  paymentMethod: PaymentMethod
-  status: "pending" | "processing" | "completed" | "failed" | "refunded"
+  method: PaymentMethod
+  provider?: string
+  status: PaymentStatus
   transactionId?: string
   reference?: string
-  timestamp: Date
-  processedBy: string
-  notes?: string
-  refundAmount?: number
-  refundReason?: string
-  refundedAt?: Date
+  createdAt: Date
+  completedAt?: Date
+  failureReason?: string
+  metadata?: Record<string, any>
 }
 
-export interface Receipt {
-  id: string
-  receiptNumber: string
+export interface PaymentRequest {
   orderId: string
-  transactionId: string
-  customerName?: string
-  items: ReceiptItem[]
-  subtotal: number
-  tax: number
-  discount: number
-  total: number
-  paymentMethod: string
-  timestamp: Date
-  cashier: string
-  restaurantInfo: {
+  amount: number
+  method: PaymentMethod
+  provider?: string
+  customerInfo?: {
     name: string
-    address: string
-    phone: string
-    taxId: string
+    phone?: string
+    email?: string
   }
+  metadata?: Record<string, any>
 }
 
-export interface ReceiptItem {
-  name: string
-  quantity: number
-  price: number
-  total: number
+export interface PaymentResponse {
+  success: boolean
+  payment?: Payment
+  error?: string
+  requiresConfirmation?: boolean
+  confirmationData?: any
 }
 
 export interface RefundRequest {
-  id: string
-  transactionId: string
-  amount: number
+  paymentId: string
+  amount?: number // Partial refund if specified
   reason: string
-  requestedBy: string
-  requestedAt: Date
-  status: "pending" | "approved" | "rejected" | "processed"
-  processedBy?: string
-  processedAt?: Date
-  notes?: string
 }
 
-export interface PaymentStats {
-  totalTransactions: number
+export interface RefundResponse {
+  success: boolean
+  refundId?: string
+  amount?: number
+  error?: string
+}
+
+export interface PaymentSummary {
   totalAmount: number
-  successRate: number
-  averageTransactionAmount: number
-  paymentMethodBreakdown: {
-    method: string
-    count: number
-    amount: number
-    percentage: number
-  }[]
-  dailyStats: {
-    date: string
-    transactions: number
-    amount: number
-  }[]
+  totalTransactions: number
+  successfulTransactions: number
+  failedTransactions: number
+  byMethod: Record<
+    PaymentMethod,
+    {
+      count: number
+      amount: number
+    }
+  >
+  byStatus: Record<PaymentStatus, number>
 }

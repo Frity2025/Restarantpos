@@ -1,104 +1,73 @@
 "use client"
-
-import { useState, useEffect } from "react"
-import { FoodCard } from "./food-card"
-import { CategoryFilter } from "./category-filter"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { foodManager } from "@/lib/food-management"
-import { waitlistManager } from "@/lib/waitlist-management"
-import { tableManager } from "@/lib/table-management"
-import type { Food } from "@/types/order"
-import { AlertCircle, UserPlus } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Plus, Minus } from "lucide-react"
+import { foodItems } from "@/config/restaurant-config"
+import { useCart } from "@/contexts/cart-context"
 
 interface FoodGridProps {
-  onAddToCart: (food: Food) => void
+  selectedCategory: string
 }
 
-export function FoodGrid({ onAddToCart }: FoodGridProps) {
-  const [foods, setFoods] = useState<Food[]>([])
-  const [filteredFoods, setFilteredFoods] = useState<Food[]>([])
-  const [selectedCategory, setSelectedCategory] = useState<string>("all")
-  const [showWaitlistAlert, setShowWaitlistAlert] = useState(false)
+export function FoodGrid({ selectedCategory }: FoodGridProps) {
+  const { addItem, removeItem, getItemQuantity } = useCart()
 
-  useEffect(() => {
-    const allFoods = foodManager.getAllFoods()
-    setFoods(allFoods)
-    setFilteredFoods(allFoods)
-
-    // ክፍት ጠረጴዛዎች ማረጋገጥ
-    checkTableAvailability()
-  }, [])
-
-  useEffect(() => {
-    if (selectedCategory === "all") {
-      setFilteredFoods(foods)
-    } else {
-      setFilteredFoods(foods.filter((food) => food.category === selectedCategory))
-    }
-  }, [selectedCategory, foods])
-
-  const checkTableAvailability = () => {
-    const availableTables = tableManager.getTablesByStatus("available")
-    const waitingCustomers = waitlistManager.getWaitingEntries().length
-
-    // ክፍት ጠረጴዛዎች ከሌሉ እና በጥበቃ ዝርዝር ውስጥ ደንበኞች ካሉ ማሳወቂያ አሳይ
-    if (availableTables.length === 0 && waitingCustomers > 0) {
-      setShowWaitlistAlert(true)
-    } else {
-      setShowWaitlistAlert(false)
-    }
-  }
-
-  const handleAddToWaitlist = () => {
-    // ወደ ጥበቃ ዝርዝር ማከል ሎጂክ - በእውነተኛ አፕሊኬሽን ውስጥ ይህ ሞዳል ወይም ፎርም ይከፍታል
-    console.log("ወደ ጥበቃ ዝርዝር ማከል...")
-  }
-
-  const categories = [
-    { id: "all", name: "ሁሉም", count: foods.length },
-    ...Array.from(new Set(foods.map((food) => food.category))).map((category) => ({
-      id: category,
-      name: category,
-      count: foods.filter((food) => food.category === category).length,
-    })),
-  ]
+  const filteredItems =
+    selectedCategory === "all" ? foodItems : foodItems.filter((item) => item.category === selectedCategory)
 
   return (
-    <div className="space-y-6">
-      {/* የጥበቃ ዝርዝር ማሳወቂያ */}
-      {showWaitlistAlert && (
-        <Alert className="border-yellow-200 bg-yellow-50">
-          <AlertCircle className="h-4 w-4 text-yellow-600" />
-          <AlertDescription className="text-yellow-800">
-            <div className="flex items-center justify-between">
-              <span>ሁሉም ጠረጴዛዎች ተይዘዋል። ደንበኞች ወደ ጥበቃ ዝርዝር ሊጨመሩ ይችላሉ።</span>
-              <Button size="sm" variant="outline" onClick={handleAddToWaitlist} className="ml-4 bg-transparent">
-                <UserPlus className="h-4 w-4 mr-2" />
-                ወደ ጥበቃ ዝርዝር ጨምር
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
+    <div className="p-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {filteredItems.map((item) => {
+          const quantity = getItemQuantity(item.id)
 
-      <CategoryFilter
-        categories={categories}
-        selectedCategory={selectedCategory}
-        onCategoryChange={setSelectedCategory}
-      />
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredFoods.map((food) => (
-          <FoodCard key={food.id} food={food} onAddToCart={onAddToCart} />
-        ))}
+          return (
+            <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <div className="aspect-square relative">
+                <img src={item.image || "/placeholder.svg"} alt={item.name} className="w-full h-full object-cover" />
+                {!item.available && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <Badge variant="destructive">አልተገኘም</Badge>
+                  </div>
+                )}
+              </div>
+              <CardContent className="p-4">
+                <h3 className="font-semibold text-lg mb-1">{item.name}</h3>
+                <p className="text-sm text-gray-600 mb-2">{item.description}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-bold text-green-600">{item.price} ብር</span>
+                  {item.available && (
+                    <div className="flex items-center space-x-2">
+                      {quantity > 0 && (
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => removeItem(item.id)}>
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <span className="font-medium">{quantity}</span>
+                        </>
+                      )}
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          addItem({
+                            id: item.id,
+                            name: item.name,
+                            price: item.price,
+                            image: item.image,
+                          })
+                        }
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
-
-      {filteredFoods.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">በዚህ ምድብ ውስጥ ምግብ አልተገኘም</p>
-        </div>
-      )}
     </div>
   )
 }

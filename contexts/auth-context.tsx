@@ -1,65 +1,59 @@
 "use client"
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
-import type { Employee, LoginCredentials, AuthResponse } from "@/types/auth"
-import { authService } from "@/lib/auth"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import type { Employee } from "@/types/auth"
+import { authenticateUser } from "@/lib/auth"
 
 interface AuthContextType {
   employee: Employee | null
-  user: Employee | null // Alias for employee for backward compatibility
-  login: (credentials: LoginCredentials) => Promise<AuthResponse>
+  login: (username: string, password: string) => Promise<boolean>
   logout: () => void
-  hasPermission: (permissionId: string) => boolean
   isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [employee, setEmployee] = useState<Employee | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Load saved employee from localStorage
-    const savedEmployee = authService.getCurrentEmployee()
+    // Check for saved session
+    const savedEmployee = localStorage.getItem("employee")
     if (savedEmployee) {
-      setEmployee(savedEmployee)
+      try {
+        setEmployee(JSON.parse(savedEmployee))
+      } catch (error) {
+        console.error("Error parsing saved employee:", error)
+        localStorage.removeItem("employee")
+      }
     }
     setIsLoading(false)
   }, [])
 
-  const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    const response = await authService.login(credentials)
-    if (response.success && response.employee) {
-      setEmployee(response.employee)
+  const login = async (username: string, password: string): Promise<boolean> => {
+    try {
+      const authenticatedEmployee = await authenticateUser(username, password)
+
+      if (authenticatedEmployee) {
+        setEmployee(authenticatedEmployee)
+        localStorage.setItem("employee", JSON.stringify(authenticatedEmployee))
+        return true
+      }
+
+      return false
+    } catch (error) {
+      console.error("Login error:", error)
+      return false
     }
-    return response
   }
 
   const logout = () => {
-    authService.logout()
     setEmployee(null)
+    localStorage.removeItem("employee")
   }
 
-  const hasPermission = (permissionId: string): boolean => {
-    return authService.hasPermission(permissionId)
-  }
-
-  return (
-    <AuthContext.Provider
-      value={{
-        employee,
-        user: employee, // Alias for backward compatibility
-        login,
-        logout,
-        hasPermission,
-        isLoading,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={{ employee, login, logout, isLoading }}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
