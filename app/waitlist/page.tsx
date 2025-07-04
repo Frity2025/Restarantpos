@@ -1,23 +1,15 @@
-import { ProtectedRoute } from "../../components/protected-route"
-import { SidebarNav } from "../../components/sidebar-nav"
-import { Header } from "../../components/header"
-import { WaitlistManagement } from "../../components/waitlist-management"
+import { ProtectedRoute } from "@/components/protected-route"
+import { WaitlistManagement } from "@/components/waitlist-management"
 
 export default function WaitlistPage() {
   return (
-    <ProtectedRoute requiredPermission="table_management">
-      <div className="flex h-screen bg-gray-100">
-        <SidebarNav />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <Header />
-          <main className="flex-1 overflow-auto p-4">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">የጥበቃ ዝርዝር አስተዳደር</h1>
-              <p className="text-gray-600">ጠረጴዛዎች ሲሞሉ የደንበኞች ጥበቃ ዝርዝር ያስተዳድሩ</p>
-            </div>
-            <WaitlistManagement />
-          </main>
+    <ProtectedRoute requiredPermission="manage_waitlist">
+      <div className="container mx-auto py-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">የጥበቃ ዝርዝር አስተዳደር</h1>
+          <p className="text-gray-600 mt-2">ደንበኞች ጠረጴዛ ሲጠብቁ የጥበቃ ዝርዝር አስተዳደር እና ማሳወቂያ ስርዓት</p>
         </div>
+        <WaitlistManagement />
       </div>
     </ProtectedRoute>
   )

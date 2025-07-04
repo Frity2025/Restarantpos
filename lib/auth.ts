@@ -175,3 +175,17 @@ export class AuthService {
 }
 
 export const authService = AuthService.getInstance()
+
+// Export the hasPermission function for direct use
+export const hasPermission = (permissionId: string): boolean => {
+  return authService.hasPermission(permissionId)
+}
+
+// Export other utility functions
+export const getCurrentEmployee = (): Employee | null => {
+  return authService.getCurrentEmployee()
+}
+
+export const getAllEmployees = (): Employee[] => {
+  return authService.getAllEmployees()
+}

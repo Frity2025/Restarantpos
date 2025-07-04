@@ -1,66 +1,36 @@
-// የጥበቃ ዝርዝር ሁኔታዎች
-export type WaitlistStatus =
-  | "waiting" // በመጠባበቅ ላይ
-  | "notified" // ተነግሮታል
-  | "seated" // ተቀምጧል
-  | "cancelled" // ተሰርዟል
-  | "no_show" // አልመጣም
-
-// የጥበቃ ዝርዝር ቅድሚያ
-export type WaitlistPriority =
-  | "normal" // መደበኛ
-  | "high" // ከፍተኛ
-  | "vip" // ቪአይፒ
-  | "elderly" // አረጋውያን
-  | "disability" // የአካል ጉዳተኞች
-
-// የጥበቃ ዝርዝር ግቤት
 export interface WaitlistEntry {
   id: string
   customerName: string
   customerPhone: string
   customerEmail?: string
   partySize: number
-  preferredTableType?: string[]
-  specialRequests?: string
   priority: WaitlistPriority
+  estimatedWaitTime: number // in minutes
+  actualWaitTime?: number
   status: WaitlistStatus
-  estimatedWaitTime: number // በደቂቃ
-  joinedAt: Date
+  specialRequests?: string
+  createdAt: Date
   notifiedAt?: Date
   seatedAt?: Date
-  tableAssigned?: string
-  notes?: string
-  createdBy: string
-  updatedAt: Date
+  cancelledAt?: Date
+  noShowAt?: Date
 }
 
-// የጥበቃ ዝርዝር ስታቲስቲክስ
+export type WaitlistPriority = "normal" | "high" | "vip" | "elderly" | "disabled"
+
+export type WaitlistStatus = "waiting" | "notified" | "ready" | "seated" | "cancelled" | "no-show"
+
 export interface WaitlistStats {
   totalWaiting: number
   averageWaitTime: number
   longestWaitTime: number
-  totalServedToday: number
+  totalSeatedToday: number
   noShowRate: number
   priorityBreakdown: Record<WaitlistPriority, number>
 }
 
-// የጥበቃ ዝርዝር ማጣሪያ
-export interface WaitlistFilter {
-  status?: WaitlistStatus[]
-  priority?: WaitlistPriority[]
-  partySize?: number
-  dateFrom?: Date
-  dateTo?: Date
-}
-
-// የጥበቃ ዝርዝር ማሳወቂያ
-export interface WaitlistNotification {
-  id: string
-  waitlistEntryId: string
-  type: "table_ready" | "position_update" | "reminder"
-  message: string
-  sentAt: Date
-  method: "sms" | "call" | "app"
-  status: "sent" | "delivered" | "failed"
+export interface NotificationPreferences {
+  sms: boolean
+  call: boolean
+  email: boolean
 }

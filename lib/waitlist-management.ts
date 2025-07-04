@@ -1,208 +1,132 @@
-import type {
-  WaitlistEntry,
-  WaitlistStatus,
-  WaitlistPriority,
-  WaitlistStats,
-  WaitlistFilter,
-  WaitlistNotification,
-} from "@/types/waitlist"
-import type { Table } from "@/types/table"
-import { tableManager } from "./table-management"
+import type { WaitlistEntry, WaitlistPriority, WaitlistStatus, WaitlistStats } from "@/types/waitlist"
+import { tableService } from "./table-management"
 
-class WaitlistManager {
-  private static instance: WaitlistManager
-  private waitlist: WaitlistEntry[] = []
-  private notifications: WaitlistNotification[] = []
-  private waitlistCounter = 1
+// ናሙና የጥበቃ ዝርዝር ውሂብ
+let waitlistEntries: WaitlistEntry[] = [
+  {
+    id: "wait-001",
+    customerName: "አልማዝ ተስፋዬ",
+    customerPhone: "+251911111111",
+    customerEmail: "almaz@email.com",
+    partySize: 4,
+    priority: "normal",
+    estimatedWaitTime: 25,
+    status: "waiting",
+    specialRequests: "የልጆች ወንበር ያስፈልጋል",
+    createdAt: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
+  },
+  {
+    id: "wait-002",
+    customerName: "ሳሙኤል ገብረ",
+    customerPhone: "+251922222222",
+    partySize: 2,
+    priority: "vip",
+    estimatedWaitTime: 10,
+    status: "notified",
+    createdAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+    notifiedAt: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+  },
+]
 
-  static getInstance(): WaitlistManager {
-    if (!WaitlistManager.instance) {
-      WaitlistManager.instance = new WaitlistManager()
+export class WaitlistService {
+  private static instance: WaitlistService
+
+  static getInstance(): WaitlistService {
+    if (!WaitlistService.instance) {
+      WaitlistService.instance = new WaitlistService()
     }
-    return WaitlistManager.instance
+    return WaitlistService.instance
   }
 
-  // የጥበቃ ዝርዝር ግቤት መፍጠር
-  addToWaitlist(entryData: {
-    customerName: string
-    customerPhone: string
-    customerEmail?: string
-    partySize: number
-    preferredTableType?: string[]
-    specialRequests?: string
-    priority?: WaitlistPriority
-    createdBy: string
-  }): WaitlistEntry {
-    const estimatedWaitTime = this.calculateEstimatedWaitTime(entryData.partySize, entryData.priority || "normal")
-
+  // ወደ ጥበቃ ዝርዝር መጨመር
+  addToWaitlist(entry: Omit<WaitlistEntry, "id" | "createdAt" | "estimatedWaitTime" | "status">): WaitlistEntry {
     const newEntry: WaitlistEntry = {
-      id: `waitlist-${Date.now()}-${this.waitlistCounter++}`,
-      ...entryData,
-      priority: entryData.priority || "normal",
+      ...entry,
+      id: `wait-${Date.now()}`,
+      createdAt: new Date(),
+      estimatedWaitTime: this.calculateEstimatedWaitTime(entry.partySize, entry.priority),
       status: "waiting",
-      estimatedWaitTime,
-      joinedAt: new Date(),
-      updatedAt: new Date(),
     }
 
-    // ቅድሚያ መሰረት ማስገባት
-    this.insertByPriority(newEntry)
-    this.updateAllEstimatedWaitTimes()
+    // የቅድሚያ መሰረት ማስገባት
+    const insertIndex = this.findInsertPosition(newEntry)
+    waitlistEntries.splice(insertIndex, 0, newEntry)
 
     return newEntry
   }
 
-  // በቅድሚያ መሰረት ማስገባት
-  private insertByPriority(entry: WaitlistEntry): void {
-    const priorityOrder: Record<WaitlistPriority, number> = {
-      vip: 1,
-      elderly: 2,
-      disability: 3,
-      high: 4,
-      normal: 5,
-    }
+  // ሁሉም የጥበቃ ዝርዝር ማግኘት
+  getAllWaitlistEntries(): WaitlistEntry[] {
+    return waitlistEntries.sort((a, b) => {
+      // በቅድሚያ እና በጊዜ ማስተካከል
+      const priorityOrder = { vip: 0, elderly: 1, disabled: 1, high: 2, normal: 3 }
+      const aPriority = priorityOrder[a.priority]
+      const bPriority = priorityOrder[b.priority]
 
-    let insertIndex = this.waitlist.length
-    for (let i = 0; i < this.waitlist.length; i++) {
-      if (
-        this.waitlist[i].status === "waiting" &&
-        priorityOrder[entry.priority] < priorityOrder[this.waitlist[i].priority]
-      ) {
-        insertIndex = i
-        break
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority
       }
-    }
 
-    this.waitlist.splice(insertIndex, 0, entry)
+      return a.createdAt.getTime() - b.createdAt.getTime()
+    })
+  }
+
+  // የሚጠብቁ ደንበኞች ብቻ
+  getWaitingEntries(): WaitlistEntry[] {
+    return this.getAllWaitlistEntries().filter((entry) => entry.status === "waiting" || entry.status === "notified")
   }
 
   // የጥበቃ ዝርዝር ሁኔታ ማዘመን
-  updateWaitlistStatus(entryId: string, status: WaitlistStatus, tableId?: string): boolean {
-    const entry = this.waitlist.find((e) => e.id === entryId)
-    if (!entry) return false
+  updateWaitlistStatus(id: string, status: WaitlistStatus): WaitlistEntry | null {
+    const entry = waitlistEntries.find((e) => e.id === id)
+    if (!entry) return null
 
     entry.status = status
-    entry.updatedAt = new Date()
 
-    if (status === "notified") {
-      entry.notifiedAt = new Date()
-      if (tableId) {
-        entry.tableAssigned = tableId
-      }
-    } else if (status === "seated") {
-      entry.seatedAt = new Date()
-      if (tableId) {
-        entry.tableAssigned = tableId
-        // ጠረጴዛውን occupied ማድረግ
-        tableManager.updateTableStatus(tableId, "occupied", {
-          customerName: entry.customerName,
-          estimatedDuration: 90, // ነባሪ 90 ደቂቃ
-        })
-      }
+    switch (status) {
+      case "notified":
+        entry.notifiedAt = new Date()
+        break
+      case "seated":
+        entry.seatedAt = new Date()
+        entry.actualWaitTime = Math.floor((new Date().getTime() - entry.createdAt.getTime()) / (1000 * 60))
+        break
+      case "cancelled":
+        entry.cancelledAt = new Date()
+        break
+      case "no-show":
+        entry.noShowAt = new Date()
+        break
     }
 
-    this.updateAllEstimatedWaitTimes()
+    return entry
+  }
+
+  // ደንበኛ ማሳወቅ
+  notifyCustomer(id: string): boolean {
+    const entry = waitlistEntries.find((e) => e.id === id)
+    if (!entry || entry.status !== "waiting") return false
+
+    // ማሳወቂያ ላክ (በእውነተኛ አፕሊኬሽን ውስጥ SMS/ስልክ ጥሪ)
+    console.log(`ደንበኛ ${entry.customerName} ተማሳወቀ - ስልክ: ${entry.customerPhone}`)
+
+    this.updateWaitlistStatus(id, "notified")
     return true
   }
 
-  // ሁሉንም የጥበቃ ዝርዝር ማግኘት
-  getAllWaitlist(): WaitlistEntry[] {
-    return this.waitlist.sort((a, b) => {
-      // በቅድሚያ እና በጊዜ ደርድር
-      const priorityOrder: Record<WaitlistPriority, number> = {
-        vip: 1,
-        elderly: 2,
-        disability: 3,
-        high: 4,
-        normal: 5,
-      }
-
-      if (a.status !== b.status) {
-        if (a.status === "waiting") return -1
-        if (b.status === "waiting") return 1
-      }
-
-      const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority]
-      if (priorityDiff !== 0) return priorityDiff
-
-      return a.joinedAt.getTime() - b.joinedAt.getTime()
-    })
-  }
-
-  // በመጠባበቅ ላይ ያሉትን ማግኘት
-  getWaitingEntries(): WaitlistEntry[] {
-    return this.waitlist.filter((entry) => entry.status === "waiting")
-  }
-
-  // በማጣሪያ የጥበቃ ዝርዝር ማግኘት
-  getFilteredWaitlist(filter: WaitlistFilter): WaitlistEntry[] {
-    let filtered = this.waitlist
-
-    if (filter.status && filter.status.length > 0) {
-      filtered = filtered.filter((entry) => filter.status!.includes(entry.status))
-    }
-
-    if (filter.priority && filter.priority.length > 0) {
-      filtered = filtered.filter((entry) => filter.priority!.includes(entry.priority))
-    }
-
-    if (filter.partySize) {
-      filtered = filtered.filter((entry) => entry.partySize === filter.partySize)
-    }
-
-    if (filter.dateFrom) {
-      filtered = filtered.filter((entry) => entry.joinedAt >= filter.dateFrom!)
-    }
-
-    if (filter.dateTo) {
-      filtered = filtered.filter((entry) => entry.joinedAt <= filter.dateTo!)
-    }
-
-    return filtered
-  }
-
-  // የጥበቃ ዝርዝር ቦታ ማግኘት
-  getWaitlistPosition(entryId: string): number {
-    const waitingEntries = this.getWaitingEntries()
-    const index = waitingEntries.findIndex((entry) => entry.id === entryId)
-    return index >= 0 ? index + 1 : -1
-  }
-
-  // የጥበቃ ጊዜ ስሌት
-  private calculateEstimatedWaitTime(partySize: number, priority: WaitlistPriority): number {
-    const baseWaitTime = 15 // ነባሪ 15 ደቂቃ
-    const partySizeMultiplier = Math.max(1, partySize / 4) // ትልቅ ቡድን ለመጠበቅ ይችላል
-    const priorityMultiplier = priority === "vip" ? 0.5 : priority === "high" ? 0.7 : 1
-
-    const waitingAhead = this.getWaitingEntries().length
-    const averageTurnoverTime = 45 // አማካይ የጠረጴዛ ተለዋዋጭነት
-
-    return Math.round(
-      (baseWaitTime + waitingAhead * (averageTurnoverTime / 3)) * partySizeMultiplier * priorityMultiplier,
-    )
-  }
-
-  // ሁሉንም የጥበቃ ጊዜዎች ማዘመን
-  private updateAllEstimatedWaitTimes(): void {
-    const waitingEntries = this.getWaitingEntries()
-    waitingEntries.forEach((entry, index) => {
-      const baseTime = index * 15 // እያንዳንዱ ቦታ 15 ደቂቃ
-      const priorityMultiplier = entry.priority === "vip" ? 0.5 : entry.priority === "high" ? 0.7 : 1
-      entry.estimatedWaitTime = Math.round(baseTime * priorityMultiplier)
-    })
-  }
-
-  // ክፍት ጠረጴዛ ሲኖር ራስ-ሰር ማሳወቅ
+  // ራስ-ሰር ማሳወቂያ ፍተሻ
   checkForAvailableTables(): WaitlistEntry[] {
-    const waitingEntries = this.getWaitingEntries()
-    const availableTables = tableManager.getTablesByStatus("available")
+    const availableTables = tableService.getAvailableTables()
+    const waitingEntries = this.getWaitingEntries().filter((e) => e.status === "waiting")
     const notifiedEntries: WaitlistEntry[] = []
 
     for (const entry of waitingEntries) {
-      const suitableTable = this.findSuitableTable(entry, availableTables)
+      const suitableTable = availableTables.find(
+        (table) => table.capacity >= entry.partySize && table.capacity <= entry.partySize + 2, // ትንሽ ተለዋዋጭነት
+      )
+
       if (suitableTable) {
-        this.updateWaitlistStatus(entry.id, "notified", suitableTable.id)
-        this.sendNotification(entry, "table_ready", `ጠረጴዛ ${suitableTable.number} ዝግጁ ነው!`)
+        this.notifyCustomer(entry.id)
         notifiedEntries.push(entry)
       }
     }
@@ -210,111 +134,104 @@ class WaitlistManager {
     return notifiedEntries
   }
 
-  // ተስማሚ ጠረጴዛ ማግኘት
-  private findSuitableTable(entry: WaitlistEntry, availableTables: Table[]): Table | null {
-    // በአቅም ማጣራት
-    let suitableTables = availableTables.filter((table) => table.capacity >= entry.partySize)
+  // የጥበቃ ጊዜ ስሌት
+  private calculateEstimatedWaitTime(partySize: number, priority: WaitlistPriority): number {
+    let baseTime = 20 // መሰረታዊ የጥበቃ ጊዜ በደቂቃ
 
-    // በተመራጭ አይነት ማጣራት
-    if (entry.preferredTableType && entry.preferredTableType.length > 0) {
-      const preferredTables = suitableTables.filter((table) =>
-        entry.preferredTableType!.some((type) => table.type === type),
-      )
-      if (preferredTables.length > 0) {
-        suitableTables = preferredTables
+    // የቡድን መጠን ተጽእኖ
+    if (partySize > 4) baseTime += 10
+    if (partySize > 6) baseTime += 10
+
+    // የቅድሚያ ተጽእኖ
+    switch (priority) {
+      case "vip":
+        baseTime *= 0.5
+        break
+      case "elderly":
+      case "disabled":
+        baseTime *= 0.7
+        break
+      case "high":
+        baseTime *= 0.8
+        break
+    }
+
+    // የአሁኑ ጥበቃ ዝርዝር ተጽእኖ
+    const waitingCount = this.getWaitingEntries().length
+    baseTime += waitingCount * 5
+
+    return Math.max(5, Math.round(baseTime))
+  }
+
+  // የማስገቢያ ቦታ ፍለጋ
+  private findInsertPosition(newEntry: WaitlistEntry): number {
+    const priorityOrder = { vip: 0, elderly: 1, disabled: 1, high: 2, normal: 3 }
+    const newPriority = priorityOrder[newEntry.priority]
+
+    for (let i = 0; i < waitlistEntries.length; i++) {
+      const currentPriority = priorityOrder[waitlistEntries[i].priority]
+      if (newPriority < currentPriority) {
+        return i
       }
     }
 
-    // በአቅም ቅርበት ደርድር (ትንሹን ተስማሚ ጠረጴዛ ምረጥ)
-    suitableTables.sort((a, b) => a.capacity - b.capacity)
-
-    return suitableTables[0] || null
+    return waitlistEntries.length
   }
 
-  // ማሳወቂያ መላክ
-  private sendNotification(entry: WaitlistEntry, type: string, message: string): void {
-    const notification: WaitlistNotification = {
-      id: `notification-${Date.now()}`,
-      waitlistEntryId: entry.id,
-      type: type as any,
-      message,
-      sentAt: new Date(),
-      method: "sms", // በእውነተኛ አፕሊኬሽን ውስጥ ይህ ተለዋዋጭ ይሆናል
-      status: "sent",
-    }
-
-    this.notifications.push(notification)
-    console.log(`ማሳወቂያ ተልኳል ለ ${entry.customerName}: ${message}`)
-  }
-
-  // የጥበቃ ዝርዝር ስታቲስቲክስ
+  // ስታቲስቲክስ
   getWaitlistStats(): WaitlistStats {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    const todayEntries = this.waitlist.filter((entry) => entry.joinedAt >= today)
+    const todayEntries = waitlistEntries.filter((entry) => entry.createdAt >= today)
+
+    const seatedEntries = todayEntries.filter((entry) => entry.status === "seated")
+    const noShowEntries = todayEntries.filter((entry) => entry.status === "no-show")
     const waitingEntries = this.getWaitingEntries()
-    const seatedToday = todayEntries.filter((entry) => entry.status === "seated")
-    const noShowToday = todayEntries.filter((entry) => entry.status === "no_show")
 
-    const waitTimes = seatedToday
-      .filter((entry) => entry.seatedAt)
-      .map((entry) => (entry.seatedAt!.getTime() - entry.joinedAt.getTime()) / (1000 * 60))
+    const totalWaitTimes = seatedEntries.filter((entry) => entry.actualWaitTime).map((entry) => entry.actualWaitTime!)
 
-    const averageWaitTime = waitTimes.length > 0 ? waitTimes.reduce((a, b) => a + b, 0) / waitTimes.length : 0
+    const averageWaitTime =
+      totalWaitTimes.length > 0 ? totalWaitTimes.reduce((sum, time) => sum + time, 0) / totalWaitTimes.length : 0
 
-    const longestWaitTime = waitTimes.length > 0 ? Math.max(...waitTimes) : 0
+    const longestWaitTime = totalWaitTimes.length > 0 ? Math.max(...totalWaitTimes) : 0
 
-    const priorityBreakdown: Record<WaitlistPriority, number> = {
-      normal: 0,
-      high: 0,
-      vip: 0,
-      elderly: 0,
-      disability: 0,
-    }
-
-    waitingEntries.forEach((entry) => {
-      priorityBreakdown[entry.priority]++
-    })
+    const priorityBreakdown = waitingEntries.reduce(
+      (acc, entry) => {
+        acc[entry.priority] = (acc[entry.priority] || 0) + 1
+        return acc
+      },
+      {} as Record<WaitlistPriority, number>,
+    )
 
     return {
       totalWaiting: waitingEntries.length,
       averageWaitTime: Math.round(averageWaitTime),
-      longestWaitTime: Math.round(longestWaitTime),
-      totalServedToday: seatedToday.length,
-      noShowRate: todayEntries.length > 0 ? (noShowToday.length / todayEntries.length) * 100 : 0,
+      longestWaitTime,
+      totalSeatedToday: seatedEntries.length,
+      noShowRate: todayEntries.length > 0 ? Math.round((noShowEntries.length / todayEntries.length) * 100) : 0,
       priorityBreakdown,
     }
   }
 
-  // የጥበቃ ዝርዝር ግቤት ማስወገድ
-  removeFromWaitlist(entryId: string): boolean {
-    const index = this.waitlist.findIndex((entry) => entry.id === entryId)
-    if (index >= 0) {
-      this.waitlist.splice(index, 1)
-      this.updateAllEstimatedWaitTimes()
-      return true
-    }
-    return false
+  // ጥበቃ ዝርዝር ማጽዳት (ያለፉ ግቤቶች)
+  cleanupOldEntries(): void {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    waitlistEntries = waitlistEntries.filter(
+      (entry) =>
+        entry.createdAt > oneDayAgo ||
+        (entry.status !== "seated" && entry.status !== "cancelled" && entry.status !== "no-show"),
+    )
   }
 
-  // የጥበቃ ዝርዝር ግቤት ማዘመን
-  updateWaitlistEntry(entryId: string, updates: Partial<WaitlistEntry>): boolean {
-    const entry = this.waitlist.find((e) => e.id === entryId)
-    if (!entry) return false
+  // ደንበኛ ማስወገድ
+  removeFromWaitlist(id: string): boolean {
+    const index = waitlistEntries.findIndex((e) => e.id === id)
+    if (index === -1) return false
 
-    Object.assign(entry, updates, { updatedAt: new Date() })
-    this.updateAllEstimatedWaitTimes()
+    waitlistEntries.splice(index, 1)
     return true
-  }
-
-  // ማሳወቂያዎች ማግኘት
-  getNotifications(entryId?: string): WaitlistNotification[] {
-    if (entryId) {
-      return this.notifications.filter((n) => n.waitlistEntryId === entryId)
-    }
-    return this.notifications.sort((a, b) => b.sentAt.getTime() - a.sentAt.getTime())
   }
 }
 
-export const waitlistManager = WaitlistManager.getInstance()
+export const waitlistService = WaitlistService.getInstance()
