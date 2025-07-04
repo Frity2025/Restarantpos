@@ -1,4 +1,4 @@
-import { LogOut, History, ChefHat, BarChart3 } from "lucide-react"
+import { LogOut, History, ChefHat, BarChart3, TableIcon, Calendar, CalendarPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { navItems, restaurantInfo } from "@/config/restaurant-config"
 import Link from "next/link"
@@ -8,6 +8,9 @@ export function SidebarNav() {
     { icon: History, label: "የትዕዛዝ ታሪክ", href: "/orders", color: "text-gray-600" },
     { icon: ChefHat, label: "የኩሽና ማሳያ", href: "/kitchen", color: "text-gray-600" },
     { icon: BarChart3, label: "ስታቲስቲክስ", href: "/stats", color: "text-gray-600" },
+    { icon: TableIcon, label: "የጠረጴዛ አቀማመጥ", href: "/tables", color: "text-gray-600" },
+    { icon: Calendar, label: "ቦታ ማስያዝ አስተዳደር", href: "/reservations", color: "text-gray-600" },
+    { icon: CalendarPlus, label: "አዲስ ቦታ ማስያዝ", href: "/book-table", color: "text-gray-600" },
   ]
 
   return (
