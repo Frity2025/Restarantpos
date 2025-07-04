@@ -1,77 +1,136 @@
-export const foodCategories = [
+export interface RestaurantConfig {
+  name: string
+  nameEn: string
+  address: string
+  phone: string
+  email: string
+  website: string
+  currency: string
+  taxRate: number
+  serviceCharge: number
+  openingHours: {
+    [key: string]: {
+      open: string
+      close: string
+      closed: boolean
+    }
+  }
+  tableCount: number
+  maxPartySize: number
+  reservationSettings: {
+    advanceBookingDays: number
+    minBookingHours: number
+    maxBookingHours: number
+    requireDeposit: boolean
+    depositAmount: number
+  }
+  paymentMethods: string[]
+  languages: string[]
+  features: {
+    onlineOrdering: boolean
+    delivery: boolean
+    takeaway: boolean
+    reservations: boolean
+    waitlist: boolean
+    loyaltyProgram: boolean
+  }
+}
+
+export const restaurantConfig: RestaurantConfig = {
+  name: "የባህል ምግብ ቤት",
+  nameEn: "Cultural Restaurant",
+  address: "አዲስ አበባ, ኢትዮጵያ",
+  phone: "+251-11-123-4567",
+  email: "info@culturalrestaurant.et",
+  website: "www.culturalrestaurant.et",
+  currency: "ብር",
+  taxRate: 0.15,
+  serviceCharge: 0.1,
+  openingHours: {
+    monday: { open: "08:00", close: "22:00", closed: false },
+    tuesday: { open: "08:00", close: "22:00", closed: false },
+    wednesday: { open: "08:00", close: "22:00", closed: false },
+    thursday: { open: "08:00", close: "22:00", closed: false },
+    friday: { open: "08:00", close: "23:00", closed: false },
+    saturday: { open: "08:00", close: "23:00", closed: false },
+    sunday: { open: "09:00", close: "21:00", closed: false },
+  },
+  tableCount: 20,
+  maxPartySize: 12,
+  reservationSettings: {
+    advanceBookingDays: 30,
+    minBookingHours: 2,
+    maxBookingHours: 720, // 30 days
+    requireDeposit: false,
+    depositAmount: 100,
+  },
+  paymentMethods: ["ጥሬ ገንዘብ", "ክሬዲት ካርድ", "ሞባይል ክፍያ", "ባንክ ዝውውር"],
+  languages: ["አማርኛ", "English"],
+  features: {
+    onlineOrdering: true,
+    delivery: true,
+    takeaway: true,
+    reservations: true,
+    waitlist: true,
+    loyaltyProgram: false,
+  },
+}
+
+export const diningModes = [
   {
-    id: "main-dishes",
-    name: "ዋና ምግቦች",
-    description: "ዋና ዋና የኢትዮጵያ ምግቦች",
+    id: "dine-in",
+    name: "በሬስቶራንት ውስጥ",
+    nameEn: "Dine In",
+    description: "በሬስቶራንት ውስጥ ይመገቡ",
     icon: "🍽️",
+    available: true,
   },
   {
-    id: "sides",
-    name: "ተጨማሪ ምግቦች",
-    description: "ከዋና ምግብ ጋር የሚቀርቡ ምግቦች",
-    icon: "🥖",
+    id: "takeaway",
+    name: "ይዘው ይሂዱ",
+    nameEn: "Takeaway",
+    description: "ምግብ ይዘው ይሂዱ",
+    icon: "🥡",
+    available: true,
   },
   {
-    id: "beverages",
-    name: "መጠጦች",
-    description: "ሞቅ ያሉ እና ቀዝቃዛ መጠጦች",
-    icon: "☕",
-  },
-  {
-    id: "desserts",
-    name: "ጣፋጭ ምግቦች",
-    description: "ጣፋጭ ምግቦች እና ፍራፍሬዎች",
-    icon: "🍰",
-  },
-  {
-    id: "appetizers",
-    name: "መክሰስ",
-    description: "ከዋና ምግብ በፊት የሚቀርቡ ምግቦች",
-    icon: "🥗",
+    id: "delivery",
+    name: "ማድረስ",
+    nameEn: "Delivery",
+    description: "ወደ ቤትዎ እናደርሳለን",
+    icon: "🚚",
+    available: restaurantConfig.features.delivery,
   },
 ]
 
-export const paymentMethods = [
+export const paymentTypes = [
   {
     id: "cash",
     name: "ጥሬ ገንዘብ",
+    nameEn: "Cash",
     icon: "💵",
-    enabled: true,
+    available: true,
   },
   {
     id: "card",
-    name: "ካርድ",
+    name: "ክሬዲት ካርድ",
+    nameEn: "Credit Card",
     icon: "💳",
-    enabled: true,
+    available: true,
   },
   {
     id: "mobile",
     name: "ሞባይል ክፍያ",
+    nameEn: "Mobile Payment",
     icon: "📱",
-    enabled: true,
-  },
-]
-
-export const tableStatuses = [
-  {
-    id: "available",
-    name: "ክፍት",
-    color: "bg-green-100 text-green-800",
+    available: true,
   },
   {
-    id: "occupied",
-    name: "የተያዘ",
-    color: "bg-red-100 text-red-800",
-  },
-  {
-    id: "reserved",
-    name: "የተያዘ",
-    color: "bg-yellow-100 text-yellow-800",
-  },
-  {
-    id: "cleaning",
-    name: "በጽዳት ላይ",
-    color: "bg-blue-100 text-blue-800",
+    id: "bank",
+    name: "ባንክ ዝውውር",
+    nameEn: "Bank Transfer",
+    icon: "🏦",
+    available: true,
   },
 ]
 
@@ -79,106 +138,96 @@ export const orderStatuses = [
   {
     id: "pending",
     name: "በመጠባበቅ ላይ",
+    nameEn: "Pending",
     color: "bg-yellow-100 text-yellow-800",
+    description: "ትዕዛዝ ተቀብሏል እና በመጠባበቅ ላይ ነው",
+  },
+  {
+    id: "confirmed",
+    name: "ተረጋግጧል",
+    nameEn: "Confirmed",
+    color: "bg-blue-100 text-blue-800",
+    description: "ትዕዛዝ ተረጋግጧል",
   },
   {
     id: "preparing",
-    name: "በዝግጅት ላይ",
-    color: "bg-blue-100 text-blue-800",
+    name: "እየተዘጋጀ",
+    nameEn: "Preparing",
+    color: "bg-orange-100 text-orange-800",
+    description: "ምግብ እየተዘጋጀ ነው",
   },
   {
     id: "ready",
     name: "ዝግጁ",
+    nameEn: "Ready",
     color: "bg-green-100 text-green-800",
+    description: "ምግብ ዝግጁ ነው",
   },
   {
     id: "served",
     name: "ተቀርቧል",
+    nameEn: "Served",
     color: "bg-purple-100 text-purple-800",
+    description: "ምግብ ለደንበኛ ተቀርቧል",
   },
   {
     id: "completed",
-    name: "ተጠናቋል",
+    name: "ተጠናቅቋል",
+    nameEn: "Completed",
     color: "bg-gray-100 text-gray-800",
+    description: "ትዕዛዝ ተጠናቅቋል",
   },
   {
     id: "cancelled",
     name: "ተሰርዟል",
+    nameEn: "Cancelled",
+    color: "bg-red-100 text-red-800",
+    description: "ትዕዛዝ ተሰርዟል",
+  },
+]
+
+export const tableStatuses = [
+  {
+    id: "available",
+    name: "ይገኛል",
+    nameEn: "Available",
+    color: "bg-green-100 text-green-800",
+  },
+  {
+    id: "occupied",
+    name: "ተይዟል",
+    nameEn: "Occupied",
     color: "bg-red-100 text-red-800",
   },
-]
-
-export const restaurantSettings = {
-  name: "ቺሊ ሬስቶራንት",
-  address: "አዲስ አበባ, ኢትዮጵያ",
-  phone: "+251-11-123-4567",
-  email: "info@chilirestaurant.com",
-  currency: "ብር",
-  taxRate: 0.15, // 15% VAT
-  serviceCharge: 0.1, // 10% service charge
-  workingHours: {
-    open: "08:00",
-    close: "22:00",
-  },
-  maxTableCapacity: 8,
-  defaultPreparationTime: 20, // minutes
-  languages: ["am", "en"], // Amharic, English
-  timezone: "Africa/Addis_Ababa",
-}
-
-export const diningModes = [
   {
-    id: "dine-in",
-    name: "በምግብ ቤት ውስጥ",
-    description: "ደንበኞች በምግብ ቤት ውስጥ ይመገባሉ",
-    icon: "🍽️",
-    enabled: true,
-  },
-  {
-    id: "takeaway",
-    name: "ይዘው መሄድ",
-    description: "ደንበኞች ምግብ ይዘው ይሄዳሉ",
-    icon: "🥡",
-    enabled: true,
-  },
-  {
-    id: "delivery",
-    name: "ማድረስ",
-    description: "ምግብ ወደ ደንበኛ ቤት ይደርሳል",
-    icon: "🚚",
-    enabled: false,
-  },
-]
-
-export const priorities = [
-  {
-    id: "normal",
-    name: "መደበኛ",
-    color: "bg-gray-100 text-gray-800",
-    multiplier: 1.0,
-  },
-  {
-    id: "high",
-    name: "ከፍተኛ",
-    color: "bg-orange-100 text-orange-800",
-    multiplier: 0.8,
-  },
-  {
-    id: "vip",
-    name: "VIP",
-    color: "bg-purple-100 text-purple-800",
-    multiplier: 0.6,
-  },
-  {
-    id: "elderly",
-    name: "አረጋውያን",
+    id: "reserved",
+    name: "ተያዟል",
+    nameEn: "Reserved",
     color: "bg-blue-100 text-blue-800",
-    multiplier: 0.7,
   },
   {
-    id: "disabled",
-    name: "አካል ጉዳተኞች",
-    color: "bg-green-100 text-green-800",
-    multiplier: 0.7,
+    id: "cleaning",
+    name: "እየተጸዳ",
+    nameEn: "Cleaning",
+    color: "bg-yellow-100 text-yellow-800",
   },
+]
+
+export const spicyLevels = [
+  { level: 0, name: "ምንም አይደለም", nameEn: "None", icon: "⚪" },
+  { level: 1, name: "ቀላል", nameEn: "Mild", icon: "🟡" },
+  { level: 2, name: "መካከለኛ", nameEn: "Medium", icon: "🟠" },
+  { level: 3, name: "ጠንካራ", nameEn: "Hot", icon: "🔴" },
+  { level: 4, name: "በጣም ጠንካራ", nameEn: "Very Hot", icon: "🌶️" },
+  { level: 5, name: "እሳት", nameEn: "Fire", icon: "🔥" },
+]
+
+export const allergens = ["እንቁላል", "ወተት", "ግሉተን", "ለውዝ", "ሶያ", "ዓሳ", "ሼልፊሽ", "ሰሊጥ"]
+
+export const dietaryPreferences = [
+  { id: "vegetarian", name: "ቬጀቴሪያን", nameEn: "Vegetarian" },
+  { id: "vegan", name: "ቪጋን", nameEn: "Vegan" },
+  { id: "gluten-free", name: "ግሉተን ነጻ", nameEn: "Gluten Free" },
+  { id: "halal", name: "ሃላል", nameEn: "Halal" },
+  { id: "kosher", name: "ኮሸር", nameEn: "Kosher" },
 ]

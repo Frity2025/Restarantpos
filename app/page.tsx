@@ -1,318 +1,407 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 import {
   ShoppingCart,
   Users,
   DollarSign,
   TrendingUp,
   Clock,
-  CheckCircle,
+  ChefHat,
+  Package,
   AlertTriangle,
   Plus,
   Eye,
-  ArrowRight,
+  Settings,
+  BarChart3,
 } from "lucide-react"
-import { useAuth } from "@/contexts/auth-context"
+import { ProtectedRoute } from "@/components/protected-route"
 import { Header } from "@/components/header"
 import { SidebarNav } from "@/components/sidebar-nav"
-import { ProtectedRoute } from "@/components/protected-route"
+import { DiningMode } from "@/components/dining-mode"
+import { CategoryFilter } from "@/components/category-filter"
+import { FoodGrid } from "@/components/food-grid"
+import { Cart } from "@/components/cart"
+import { useAuth } from "@/contexts/auth-context"
+import { useCart } from "@/contexts/cart-context"
 import Link from "next/link"
 
-// Mock data
-const dashboardStats = {
-  todayOrders: 45,
-  todayRevenue: 12500,
-  activeCustomers: 23,
-  avgOrderValue: 278,
-}
+export default function HomePage() {
+  const { employee, hasPermission } = useAuth()
+  const { items } = useCart()
+  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [diningMode, setDiningMode] = useState("dine-in")
 
-const recentOrders = [
-  {
-    id: "ORD-001",
-    table: 5,
-    customer: "አህመድ አሊ",
-    items: 3,
-    total: 420,
-    status: "preparing",
-    time: "10 ደቂቃ በፊት",
-  },
-  {
-    id: "ORD-002",
-    table: 8,
-    customer: "ፋጢማ መሀመድ",
-    items: 2,
-    total: 180,
-    status: "ready",
-    time: "15 ደቂቃ በፊት",
-  },
-  {
-    id: "ORD-003",
-    table: 3,
-    customer: "ዳዊት ተስፋዬ",
-    items: 4,
-    total: 650,
-    status: "completed",
-    time: "25 ደቂቃ በፊት",
-  },
-]
-
-const quickActions = [
-  {
-    title: "አዲስ ትዕዛዝ",
-    description: "አዲስ ትዕዛዝ ይጀምሩ",
-    icon: Plus,
-    href: "/orders",
-    color: "bg-blue-500 hover:bg-blue-600",
-  },
-  {
-    title: "ኩሽና ይመልከቱ",
-    description: "የኩሽና ሁኔታ ይመልከቱ",
-    icon: Eye,
-    href: "/kitchen",
-    color: "bg-orange-500 hover:bg-orange-600",
-  },
-  {
-    title: "ክፍያዎች",
-    description: "ክፍያዎችን ያስተዳድሩ",
-    icon: DollarSign,
-    href: "/payments",
-    color: "bg-green-500 hover:bg-green-600",
-  },
-]
-
-function getStatusColor(status: string) {
-  switch (status) {
-    case "pending":
-      return "bg-yellow-100 text-yellow-800"
-    case "preparing":
-      return "bg-blue-100 text-blue-800"
-    case "ready":
-      return "bg-green-100 text-green-800"
-    case "completed":
-      return "bg-gray-100 text-gray-800"
-    default:
-      return "bg-gray-100 text-gray-800"
+  // Mock data for dashboard
+  const stats = {
+    todayOrders: 45,
+    todayRevenue: 12500,
+    activeOrders: 8,
+    pendingOrders: 3,
+    lowStockItems: 5,
+    tablesOccupied: 12,
+    totalTables: 20,
   }
-}
 
-function getStatusText(status: string) {
-  switch (status) {
-    case "pending":
-      return "በመጠባበቅ"
-    case "preparing":
-      return "በዝግጅት"
-    case "ready":
-      return "ዝግጁ"
-    case "completed":
-      return "ተጠናቋል"
-    default:
-      return status
+  const recentOrders = [
+    { id: "ORD-001", table: "ጠረጴዛ 5", items: 3, total: 450, status: "preparing", time: "5 ደቂቃ በፊት" },
+    { id: "ORD-002", table: "ጠረጴዛ 2", items: 2, total: 320, status: "ready", time: "8 ደቂቃ በፊት" },
+    { id: "ORD-003", table: "ጠረጴዛ 8", items: 4, total: 680, status: "served", time: "12 ደቂቃ በፊት" },
+  ]
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "preparing":
+        return "bg-yellow-100 text-yellow-800"
+      case "ready":
+        return "bg-green-100 text-green-800"
+      case "served":
+        return "bg-blue-100 text-blue-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
   }
-}
 
-function getStatusIcon(status: string) {
-  switch (status) {
-    case "pending":
-      return <Clock className="h-3 w-3" />
-    case "preparing":
-      return <AlertTriangle className="h-3 w-3" />
-    case "ready":
-    case "completed":
-      return <CheckCircle className="h-3 w-3" />
-    default:
-      return <Clock className="h-3 w-3" />
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "preparing":
+        return "እየተዘጋጀ"
+      case "ready":
+        return "ዝግጁ"
+      case "served":
+        return "ተቀርቧል"
+      default:
+        return status
+    }
   }
-}
 
-function DashboardContent() {
-  const { employee } = useAuth()
-  const [currentTime, setCurrentTime] = useState(new Date())
+  const getRoleBasedQuickActions = () => {
+    const actions = []
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 1000)
+    if (hasPermission("pos_create")) {
+      actions.push({
+        title: "አዲስ ትዕዛዝ",
+        description: "አዲስ ትዕዛዝ ይጀምሩ",
+        icon: Plus,
+        href: "/",
+        color: "bg-blue-500 hover:bg-blue-600",
+      })
+    }
 
-    return () => clearInterval(timer)
-  }, [])
+    if (hasPermission("view_orders")) {
+      actions.push({
+        title: "ትዕዛዞች",
+        description: "ሁሉንም ትዕዛዞች ይመልከቱ",
+        icon: Eye,
+        href: "/orders",
+        color: "bg-green-500 hover:bg-green-600",
+      })
+    }
+
+    if (hasPermission("kitchen_access")) {
+      actions.push({
+        title: "ኩሽና",
+        description: "የኩሽና ዳሽቦርድ",
+        icon: ChefHat,
+        href: "/kitchen",
+        color: "bg-orange-500 hover:bg-orange-600",
+      })
+    }
+
+    if (hasPermission("admin_access")) {
+      actions.push({
+        title: "አስተዳደር",
+        description: "የስርዓት ቅንብሮች",
+        icon: Settings,
+        href: "/admin",
+        color: "bg-purple-500 hover:bg-purple-600",
+      })
+    }
+
+    if (hasPermission("view_analytics")) {
+      actions.push({
+        title: "ሪፖርቶች",
+        description: "የሽያጭ ሪፖርቶች",
+        icon: BarChart3,
+        href: "/stats",
+        color: "bg-indigo-500 hover:bg-indigo-600",
+      })
+    }
+
+    return actions
+  }
+
+  const quickActions = getRoleBasedQuickActions()
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <SidebarNav />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-6">
-          {/* Welcome Section */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">እንኳን ደህና መጡ, {employee?.name}!</h1>
-                <p className="text-gray-600 mt-1">
-                  {currentTime.toLocaleDateString("am-ET", {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}{" "}
-                  - {currentTime.toLocaleTimeString("am-ET")}
-                </p>
-              </div>
-              <Badge className="bg-green-100 text-green-800 px-3 py-1">
-                {employee?.role === "admin"
-                  ? "አስተዳዳሪ"
-                  : employee?.role === "cashier"
-                    ? "ገንዘብ ተቀባይ"
-                    : employee?.role === "kitchen"
-                      ? "ኩሽና ሰራተኛ"
-                      : "ተጠቃሚ"}
-              </Badge>
-            </div>
-          </div>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">የዛሬ ትዕዛዞች</CardTitle>
-                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{dashboardStats.todayOrders}</div>
-                <p className="text-xs text-muted-foreground">
-                  <span className="text-green-600">+12%</span> ከትናንት
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">የዛሬ ገቢ</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{dashboardStats.todayRevenue.toLocaleString()} ብር</div>
-                <p className="text-xs text-muted-foreground">
-                  <span className="text-green-600">+8%</span> ከትናንት
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">ንቁ ደንበኞች</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{dashboardStats.activeCustomers}</div>
-                <p className="text-xs text-muted-foreground">በአሁኑ ጊዜ በምግብ ቤት ውስጥ</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">አማካይ ትዕዛዝ</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{dashboardStats.avgOrderValue} ብር</div>
-                <p className="text-xs text-muted-foreground">
-                  <span className="text-green-600">+5%</span> ከትናንት
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Recent Orders */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
+    <ProtectedRoute requiredPermissions={["pos_view", "admin_access", "kitchen_access"]}>
+      <div className="flex h-screen bg-gray-50">
+        <SidebarNav />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Header />
+          <main className="flex-1 overflow-y-auto p-6">
+            {employee?.role === "admin" ? (
+              // Admin Dashboard
+              <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>የቅርብ ጊዜ ትዕዛዞች</CardTitle>
-                    <CardDescription>የዛሬ የቅርብ ጊዜ ትዕዛዞች</CardDescription>
+                    <h1 className="text-3xl font-bold text-gray-900">ዳሽቦርድ</h1>
+                    <p className="text-gray-600">እንኳን ደህና መጡ, {employee.name}</p>
                   </div>
-                  <Link href="/orders">
-                    <Button variant="outline" size="sm">
-                      ሁሉንም ይመልከቱ
-                      <ArrowRight className="h-3 w-3 ml-1" />
-                    </Button>
-                  </Link>
+                  <Badge className="bg-purple-100 text-purple-800">አስተዳዳሪ</Badge>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentOrders.map((order) => (
-                    <div key={order.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-blue-600">T{order.table}</span>
-                        </div>
-                        <div>
-                          <p className="font-medium">{order.id}</p>
-                          <p className="text-sm text-gray-600">{order.customer}</p>
-                          <p className="text-xs text-gray-500">
-                            {order.items} ምግቦች • {order.time}
-                          </p>
-                        </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">የዛሬ ትዕዛዞች</CardTitle>
+                      <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{stats.todayOrders}</div>
+                      <p className="text-xs text-muted-foreground">+12% ከትናንት</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">የዛሬ ገቢ</CardTitle>
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{stats.todayRevenue.toLocaleString()} ብር</div>
+                      <p className="text-xs text-muted-foreground">+8% ከትናንት</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">ንቁ ትዕዛዞች</CardTitle>
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{stats.activeOrders}</div>
+                      <p className="text-xs text-muted-foreground">{stats.pendingOrders} በመጠባበቅ ላይ</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">ጠረጴዛዎች</CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {stats.tablesOccupied}/{stats.totalTables}
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="text-right">
-                          <p className="font-medium">{order.total} ብር</p>
-                          <Badge className={getStatusColor(order.status)}>
-                            {getStatusIcon(order.status)}
-                            <span className="ml-1">{getStatusText(order.status)}</span>
-                          </Badge>
-                        </div>
-                      </div>
+                      <Progress value={(stats.tablesOccupied / stats.totalTables) * 100} className="mt-2" />
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Quick Actions */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>ፈጣን እርምጃዎች</CardTitle>
+                    <CardDescription>በተደጋጋሚ የሚጠቀሙባቸው ተግባራት</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                      {quickActions.map((action, index) => (
+                        <Link key={index} href={action.href}>
+                          <Button className={`w-full h-20 flex flex-col gap-2 ${action.color} text-white`}>
+                            <action.icon className="h-6 w-6" />
+                            <span className="text-sm font-medium">{action.title}</span>
+                          </Button>
+                        </Link>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
 
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>ፈጣን እርምጃዎች</CardTitle>
-                <CardDescription>በተደጋጋሚ የሚጠቀሙባቸው ተግባራት</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {quickActions.map((action, index) => {
-                    const Icon = action.icon
-                    return (
-                      <Link key={index} href={action.href}>
-                        <Button
-                          className={`w-full justify-start h-auto p-4 ${action.color} text-white`}
-                          variant="default"
-                        >
-                          <Icon className="h-5 w-5 mr-3" />
-                          <div className="text-left">
-                            <div className="font-medium">{action.title}</div>
-                            <div className="text-xs opacity-90">{action.description}</div>
+                {/* Recent Orders and Alerts */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>የቅርብ ጊዜ ትዕዛዞች</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {recentOrders.map((order) => (
+                          <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{order.id}</span>
+                                <Badge className={getStatusColor(order.status)}>{getStatusText(order.status)}</Badge>
+                              </div>
+                              <p className="text-sm text-gray-600">
+                                {order.table} • {order.items} ንጥሎች
+                              </p>
+                              <p className="text-xs text-gray-500">{order.time}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-medium">{order.total} ብር</p>
+                            </div>
                           </div>
-                        </Button>
-                      </Link>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </main>
-      </div>
-    </div>
-  )
-}
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
 
-export default function HomePage() {
-  return (
-    <ProtectedRoute>
-      <DashboardContent />
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                        ማስጠንቀቂያዎች
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
+                          <Package className="h-4 w-4 text-yellow-600" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">ዝቅተኛ ክምችት</p>
+                            <p className="text-xs text-gray-600">{stats.lowStockItems} ንጥሎች ዝቅተኛ ደረጃ ላይ</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                          <Clock className="h-4 w-4 text-blue-600" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">በመጠባበቅ ላይ ያሉ ትዕዛዞች</p>
+                            <p className="text-xs text-gray-600">{stats.pendingOrders} ትዕዛዞች ትኩረት ይፈልጋሉ</p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            ) : employee?.role === "kitchen" ? (
+              // Kitchen Dashboard
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900">ኩሽና ዳሽቦርድ</h1>
+                    <p className="text-gray-600">እንኳን ደህና መጡ, {employee.name}</p>
+                  </div>
+                  <Badge className="bg-orange-100 text-orange-800">ኩሽና ሰራተኛ</Badge>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Clock className="h-5 w-5 text-yellow-600" />
+                        በመጠባበቅ ላይ
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-yellow-600">{stats.pendingOrders}</div>
+                      <p className="text-sm text-gray-600">ትዕዛዞች</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <ChefHat className="h-5 w-5 text-blue-600" />
+                        እየተዘጋጀ
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-blue-600">{stats.activeOrders}</div>
+                      <p className="text-sm text-gray-600">ትዕዛዞች</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-green-600" />
+                        ዛሬ ተጠናቀቁ
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-green-600">
+                        {stats.todayOrders - stats.activeOrders - stats.pendingOrders}
+                      </div>
+                      <p className="text-sm text-gray-600">ትዕዛዞች</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>የቅርብ ጊዜ ትዕዛዞች</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {recentOrders
+                        .filter((order) => order.status !== "served")
+                        .map((order) => (
+                          <div key={order.id} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{order.id}</span>
+                                <Badge className={getStatusColor(order.status)}>{getStatusText(order.status)}</Badge>
+                              </div>
+                              <p className="text-sm text-gray-600">
+                                {order.table} • {order.items} ንጥሎች
+                              </p>
+                              <p className="text-xs text-gray-500">{order.time}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              {order.status === "preparing" && (
+                                <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                                  ዝግጁ ነው
+                                </Button>
+                              )}
+                              <Button size="sm" variant="outline">
+                                ዝርዝር
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              // Cashier POS Interface
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900">የሽያጭ ነጥብ</h1>
+                    <p className="text-gray-600">እንኳን ደህና መጡ, {employee.name}</p>
+                  </div>
+                  <Badge className="bg-green-100 text-green-800">ገንዘብ ተቀባይ</Badge>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
+                  {/* Left Panel - Menu */}
+                  <div className="lg:col-span-2 space-y-4">
+                    <DiningMode value={diningMode} onChange={setDiningMode} />
+                    <CategoryFilter value={selectedCategory} onChange={setSelectedCategory} />
+                    <div className="flex-1 overflow-y-auto">
+                      <FoodGrid selectedCategory={selectedCategory} />
+                    </div>
+                  </div>
+
+                  {/* Right Panel - Cart */}
+                  <div className="lg:col-span-1">
+                    <Cart diningMode={diningMode} />
+                  </div>
+                </div>
+              </div>
+            )}
+          </main>
+        </div>
+      </div>
     </ProtectedRoute>
   )
 }
