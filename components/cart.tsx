@@ -4,10 +4,13 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { CreditCard, QrCode, Banknote, Edit2 } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Edit2 } from "lucide-react"
 import { orderManager } from "@/lib/order-management"
+import { PaymentProcessing } from "./payment-processing"
 import { useAuth } from "@/contexts/auth-context"
-import type { OrderItem, OrderType } from "@/types/order"
+import type { OrderItem, OrderType, Order } from "@/types/order"
+import type { Payment } from "@/types/payment"
 
 const cartItems: OrderItem[] = [
   {
@@ -44,6 +47,8 @@ export function Cart() {
     customer: "",
   })
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
+  const [showPayment, setShowPayment] = useState(false)
+  const [currentOrder, setCurrentOrder] = useState<Order | null>(null)
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.totalPrice, 0)
   const tax = subtotal * 0.05
@@ -68,15 +73,25 @@ export function Cart() {
       }
 
       const newOrder = orderManager.createOrder(orderData)
-      alert(`ትዕዛዝ ${newOrder.orderNumber} በተሳካ ሁኔታ ተፈጠረ!`)
-
-      // ካርት ማጽዳት (በእውነተኛ አፕሊኬሽን ውስጥ)
-      // clearCart()
+      setCurrentOrder(newOrder)
+      setShowPayment(true)
     } catch (error) {
       alert("ትዕዛዝ መፍጠር አልተሳካም")
     } finally {
       setIsPlacingOrder(false)
     }
+  }
+
+  const handlePaymentComplete = (payment: Payment) => {
+    alert(`ክፍያ በተሳካ ሁኔታ ተጠናቋል! ደረሰኝ ቁጥር: ${payment.receiptNumber}`)
+    setShowPayment(false)
+    setCurrentOrder(null)
+    // Clear cart in real implementation
+  }
+
+  const handlePaymentCancel = () => {
+    setShowPayment(false)
+    // Optionally cancel the order or keep it pending
   }
 
   return (
@@ -199,28 +214,30 @@ export function Cart() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          <Button variant="outline" className="flex flex-col items-center py-2 bg-transparent">
-            <Banknote className="h-5 w-5 mb-1" />
-            <span className="text-xs">ጥሬ ገንዘብ</span>
-          </Button>
-          <Button variant="outline" className="flex flex-col items-center py-2 bg-transparent">
-            <CreditCard className="h-5 w-5 mb-1" />
-            <span className="text-xs">ክሬዲት/ዴቢት ካርድ</span>
-          </Button>
-          <Button variant="outline" className="flex flex-col items-center py-2 bg-transparent">
-            <QrCode className="h-5 w-5 mb-1" />
-            <span className="text-xs">ኪውአር ኮድ</span>
-          </Button>
-        </div>
         <Button
           className="w-full bg-green-600 hover:bg-green-700 text-white h-12"
           onClick={handlePlaceOrder}
           disabled={isPlacingOrder}
         >
-          {isPlacingOrder ? "እየተፈጥር ነው..." : "ትዕዛዝ አስገባ"}
+          {isPlacingOrder ? "እየተፈጥር ነው..." : "ትዕዛዝ አስገባ እና ክፍያ አስኬድ"}
         </Button>
       </div>
+
+      {/* Payment Dialog */}
+      <Dialog open={showPayment} onOpenChange={setShowPayment}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>ክፍያ ማስኬጃ</DialogTitle>
+          </DialogHeader>
+          {currentOrder && (
+            <PaymentProcessing
+              order={currentOrder}
+              onPaymentComplete={handlePaymentComplete}
+              onCancel={handlePaymentCancel}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
