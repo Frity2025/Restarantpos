@@ -14,7 +14,7 @@ export const demoEmployees = [
     password: "cashier123",
     name: "ገንዘብ ተቀባይ",
     role: "cashier",
-    permissions: ["pos_view", "pos_create", "orders_view"],
+    permissions: ["pos_view", "pos_create", "orders_view", "payments_view"],
   },
   {
     id: "3",
@@ -52,6 +52,6 @@ export async function authenticateUser(username: string, password: string) {
 
 export function hasPermission(employee: any, permission: string): boolean {
   if (!employee) return false
-  if (employee.role === "admin" || employee.permissions.includes("all")) return true
-  return employee.permissions.includes(permission)
+  if (employee.role === "admin" || employee.permissions?.includes("all")) return true
+  return employee.permissions?.includes(permission) || false
 }

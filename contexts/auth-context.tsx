@@ -1,7 +1,7 @@
 "use client"
 
-import { createContext, useContext, useState, type ReactNode } from "react"
-import { authenticateUser } from "@/lib/auth"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { authenticateUser, hasPermission as checkPermission } from "@/lib/auth"
 
 interface Employee {
   id: string
@@ -15,13 +15,28 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>
   logout: () => void
   isLoading: boolean
+  hasPermission: (permission: string) => boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [employee, setEmployee] = useState<Employee | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    // Check for saved session
+    const savedEmployee = localStorage.getItem("employee")
+    if (savedEmployee) {
+      try {
+        setEmployee(JSON.parse(savedEmployee))
+      } catch (error) {
+        console.error("Error parsing saved employee:", error)
+        localStorage.removeItem("employee")
+      }
+    }
+    setIsLoading(false)
+  }, [])
 
   const login = async (username: string, password: string) => {
     setIsLoading(true)
@@ -29,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await authenticateUser(username, password)
       if (result.success && result.employee) {
         setEmployee(result.employee)
+        localStorage.setItem("employee", JSON.stringify(result.employee))
         return { success: true }
       }
       return { success: false, error: result.error }
@@ -39,9 +55,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setEmployee(null)
+    localStorage.removeItem("employee")
   }
 
-  return <AuthContext.Provider value={{ employee, login, logout, isLoading }}>{children}</AuthContext.Provider>
+  const hasPermission = (permission: string): boolean => {
+    return checkPermission(employee, permission)
+  }
+
+  return (
+    <AuthContext.Provider value={{ employee, login, logout, isLoading, hasPermission }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {

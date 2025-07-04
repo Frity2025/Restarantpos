@@ -2,16 +2,16 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
+import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/auth-context"
 import { CartProvider } from "@/contexts/cart-context"
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/sonner"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "ቺሊ POS - የምግብ ቤት የመሸጫ ስርዓት",
-  description: "ሙሉ ባህሪ ያለው የምግብ ቤት የመሸጫ ስርዓት",
+  title: "ቺሊ POS - የምግብ ቤት አስተዳደር ስርዓት",
+  description: "ሙሉ የምግብ ቤት አስተዳደር እና POS ስርዓት",
     generator: 'v0.dev'
 }
 
