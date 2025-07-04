@@ -1,118 +1,184 @@
-export const foodItems = [
+export const foodCategories = [
   {
-    id: "food-1",
-    title: "ዶሮ ወጥ",
-    description: "ባህላዊ የኢትዮጵያ ዶሮ ወጥ በቤርቤሬ እና በተለያዩ ቅመሞች የተቀመመ",
-    price: 350.0,
-    category: "ዋና ምግቦች",
-    type: "NON_VEG",
-    spicyLevel: 3,
-    preparationTime: 45,
-    ingredients: ["ዶሮ", "ቤርቤሬ", "ሽንኩርት", "ነጭ ሽንኩርት", "ዘይት", "እንቁላል"],
-    image: "/placeholder.svg?height=200&width=300",
-    available: true,
+    id: "main-dishes",
+    name: "ዋና ምግቦች",
+    description: "ዋና ዋና የኢትዮጵያ ምግቦች",
+    icon: "🍽️",
   },
   {
-    id: "food-2",
-    title: "ክትፎ",
-    description: "ጥሬ ስጋ በሚጣ እና በቅመሞች የተቀመመ",
-    price: 280.0,
-    category: "ዋና ምግቦች",
-    type: "NON_VEG",
-    spicyLevel: 4,
-    preparationTime: 15,
-    ingredients: ["ጥሬ ስጋ", "ሚጣ", "ቤርቤሬ", "ካርዳሞም"],
-    image: "/placeholder.svg?height=200&width=300",
-    available: true,
+    id: "sides",
+    name: "ተጨማሪ ምግቦች",
+    description: "ከዋና ምግብ ጋር የሚቀርቡ ምግቦች",
+    icon: "🥖",
   },
   {
-    id: "food-3",
-    title: "ሽሮ ወጥ",
-    description: "የተፈጨ አተር ወጥ በቅመሞች የተቀመመ",
-    price: 120.0,
-    category: "ዋና ምግቦች",
-    type: "VEG",
-    spicyLevel: 2,
-    preparationTime: 30,
-    ingredients: ["ሽሮ", "ሽንኩርት", "ነጭ ሽንኩርት", "ዘይት", "ቤርቤሬ"],
-    image: "/placeholder.svg?height=200&width=300",
-    available: true,
+    id: "beverages",
+    name: "መጠጦች",
+    description: "ሞቅ ያሉ እና ቀዝቃዛ መጠጦች",
+    icon: "☕",
   },
   {
-    id: "food-4",
-    title: "ፍርፍር",
-    description: "የተቀላቀሉ ወጦች በኢንጀራ ላይ",
-    price: 200.0,
-    category: "ዋና ምግቦች",
-    type: "VEG",
-    spicyLevel: 2,
-    preparationTime: 25,
-    ingredients: ["ሽሮ", "ምስር", "ጎመን", "ኢንጀራ"],
-    image: "/placeholder.svg?height=200&width=300",
-    available: true,
+    id: "desserts",
+    name: "ጣፋጭ ምግቦች",
+    description: "ጣፋጭ ምግቦች እና ፍራፍሬዎች",
+    icon: "🍰",
   },
   {
-    id: "food-5",
-    title: "ቡና",
-    description: "ባህላዊ የኢትዮጵያ ቡና",
-    price: 25.0,
-    category: "መጠጦች",
-    type: "VEG",
-    spicyLevel: 0,
-    preparationTime: 10,
-    ingredients: ["የቡና ፍሬ", "ውሃ", "ስኳር"],
-    image: "/placeholder.svg?height=200&width=300",
-    available: true,
-  },
-  {
-    id: "food-6",
-    title: "ሻይ",
-    description: "ሞቅ ያለ ሻይ በስኳር",
-    price: 15.0,
-    category: "መጠጦች",
-    type: "VEG",
-    spicyLevel: 0,
-    preparationTime: 5,
-    ingredients: ["ሻይ", "ውሃ", "ስኳር", "ወተት"],
-    image: "/placeholder.svg?height=200&width=300",
-    available: true,
-  },
-  {
-    id: "food-7",
-    title: "ቁርስ ኮምቦ",
-    description: "እንቁላል፣ ዳቦ እና ሻይ",
-    price: 85.0,
-    category: "ቁርስ",
-    type: "VEG",
-    spicyLevel: 0,
-    preparationTime: 15,
-    ingredients: ["እንቁላል", "ዳቦ", "ሻይ", "ቅቤ"],
-    image: "/placeholder.svg?height=200&width=300",
-    available: true,
-  },
-  {
-    id: "food-8",
-    title: "ሾርባ",
-    description: "ሞቅ ያለ የአትክልት ሾርባ",
-    price: 65.0,
-    category: "ሾርባዎች",
-    type: "VEG",
-    spicyLevel: 1,
-    preparationTime: 20,
-    ingredients: ["ካሮት", "ድንች", "ሽንኩርት", "ቲማቲም"],
-    image: "/placeholder.svg?height=200&width=300",
-    available: true,
+    id: "appetizers",
+    name: "መክሰስ",
+    description: "ከዋና ምግብ በፊት የሚቀርቡ ምግቦች",
+    icon: "🥗",
   },
 ]
+
+export const paymentMethods = [
+  {
+    id: "cash",
+    name: "ጥሬ ገንዘብ",
+    icon: "💵",
+    enabled: true,
+  },
+  {
+    id: "card",
+    name: "ካርድ",
+    icon: "💳",
+    enabled: true,
+  },
+  {
+    id: "mobile",
+    name: "ሞባይል ክፍያ",
+    icon: "📱",
+    enabled: true,
+  },
+]
+
+export const tableStatuses = [
+  {
+    id: "available",
+    name: "ክፍት",
+    color: "bg-green-100 text-green-800",
+  },
+  {
+    id: "occupied",
+    name: "የተያዘ",
+    color: "bg-red-100 text-red-800",
+  },
+  {
+    id: "reserved",
+    name: "የተያዘ",
+    color: "bg-yellow-100 text-yellow-800",
+  },
+  {
+    id: "cleaning",
+    name: "በጽዳት ላይ",
+    color: "bg-blue-100 text-blue-800",
+  },
+]
+
+export const orderStatuses = [
+  {
+    id: "pending",
+    name: "በመጠባበቅ ላይ",
+    color: "bg-yellow-100 text-yellow-800",
+  },
+  {
+    id: "preparing",
+    name: "በዝግጅት ላይ",
+    color: "bg-blue-100 text-blue-800",
+  },
+  {
+    id: "ready",
+    name: "ዝግጁ",
+    color: "bg-green-100 text-green-800",
+  },
+  {
+    id: "served",
+    name: "ተቀርቧል",
+    color: "bg-purple-100 text-purple-800",
+  },
+  {
+    id: "completed",
+    name: "ተጠናቋል",
+    color: "bg-gray-100 text-gray-800",
+  },
+  {
+    id: "cancelled",
+    name: "ተሰርዟል",
+    color: "bg-red-100 text-red-800",
+  },
+]
+
+export const restaurantSettings = {
+  name: "ቺሊ ሬስቶራንት",
+  address: "አዲስ አበባ, ኢትዮጵያ",
+  phone: "+251-11-123-4567",
+  email: "info@chilirestaurant.com",
+  currency: "ብር",
+  taxRate: 0.15, // 15% VAT
+  serviceCharge: 0.1, // 10% service charge
+  workingHours: {
+    open: "08:00",
+    close: "22:00",
+  },
+  maxTableCapacity: 8,
+  defaultPreparationTime: 20, // minutes
+  languages: ["am", "en"], // Amharic, English
+  timezone: "Africa/Addis_Ababa",
+}
 
 export const diningModes = [
-  { id: "dine-in", name: "በሬስቶራንት ውስጥ", icon: "🍽️" },
-  { id: "takeaway", name: "ይዘው ይሂዱ", icon: "🥡" },
-  { id: "delivery", name: "ማድረስ", icon: "🚚" },
+  {
+    id: "dine-in",
+    name: "በምግብ ቤት ውስጥ",
+    description: "ደንበኞች በምግብ ቤት ውስጥ ይመገባሉ",
+    icon: "🍽️",
+    enabled: true,
+  },
+  {
+    id: "takeaway",
+    name: "ይዘው መሄድ",
+    description: "ደንበኞች ምግብ ይዘው ይሄዳሉ",
+    icon: "🥡",
+    enabled: true,
+  },
+  {
+    id: "delivery",
+    name: "ማድረስ",
+    description: "ምግብ ወደ ደንበኛ ቤት ይደርሳል",
+    icon: "🚚",
+    enabled: false,
+  },
 ]
 
-export const paymentTypes = [
-  { id: "cash", name: "ጥሬ ገንዘብ", icon: "💵" },
-  { id: "card", name: "ካርድ", icon: "💳" },
-  { id: "mobile", name: "ሞባይል ክፍያ", icon: "📱" },
+export const priorities = [
+  {
+    id: "normal",
+    name: "መደበኛ",
+    color: "bg-gray-100 text-gray-800",
+    multiplier: 1.0,
+  },
+  {
+    id: "high",
+    name: "ከፍተኛ",
+    color: "bg-orange-100 text-orange-800",
+    multiplier: 0.8,
+  },
+  {
+    id: "vip",
+    name: "VIP",
+    color: "bg-purple-100 text-purple-800",
+    multiplier: 0.6,
+  },
+  {
+    id: "elderly",
+    name: "አረጋውያን",
+    color: "bg-blue-100 text-blue-800",
+    multiplier: 0.7,
+  },
+  {
+    id: "disabled",
+    name: "አካል ጉዳተኞች",
+    color: "bg-green-100 text-green-800",
+    multiplier: 0.7,
+  },
 ]
