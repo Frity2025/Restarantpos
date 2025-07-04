@@ -17,6 +17,8 @@ import {
   Clock,
   Table,
   UserCheck,
+  Package,
+  Truck,
 } from "lucide-react"
 
 const navigation = [
@@ -49,6 +51,18 @@ const navigation = [
     href: "/waitlist",
     icon: Clock,
     permissions: ["manage_waitlist", "view_waitlist"],
+  },
+  {
+    name: "ክምችት",
+    href: "/inventory",
+    icon: Package,
+    permissions: ["manage_inventory", "view_inventory"],
+  },
+  {
+    name: "አቅራቢዎች",
+    href: "/suppliers",
+    icon: Truck,
+    permissions: ["manage_suppliers"],
   },
   {
     name: "ኩሽና",
