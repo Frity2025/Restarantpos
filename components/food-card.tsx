@@ -1,60 +1,52 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus } from "lucide-react"
-import { useCart } from "@/contexts/cart-context"
-
-interface FoodItem {
-  id: string
-  name: string
-  category: string
-  price: number
-  image: string
-  description: string
-  available: boolean
-}
+import { Plus, Clock } from "lucide-react"
+import Image from "next/image"
 
 interface FoodCardProps {
-  item: FoodItem
+  item: {
+    id: string
+    name: string
+    description: string
+    price: number
+    image: string
+    available: boolean
+    preparationTime: number
+  }
+  onAddToCart: (item: any) => void
 }
 
-export function FoodCard({ item }: FoodCardProps) {
-  const { addItem } = useCart()
-
-  const handleAddToCart = () => {
-    addItem({
-      id: item.id,
-      name: item.name,
-      price: item.price,
-      quantity: 1,
-      image: item.image,
-    })
-  }
-
+export function FoodCard({ item, onAddToCart }: FoodCardProps) {
   return (
-    <Card className={`overflow-hidden ${!item.available ? "opacity-50" : ""}`}>
-      <div className="aspect-square relative">
-        <img src={item.image || "/placeholder.svg"} alt={item.name} className="w-full h-full object-cover" />
-        {!item.available && (
-          <Badge variant="destructive" className="absolute top-2 right-2">
-            አልተገኘም
-          </Badge>
-        )}
-      </div>
+    <Card className={`h-full ${!item.available ? "opacity-50" : ""}`}>
       <CardContent className="p-4">
-        <div className="space-y-2">
-          <h3 className="font-semibold text-lg">{item.name}</h3>
-          <p className="text-sm text-gray-600">{item.description}</p>
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-bold text-green-600">{item.price} ብር</span>
-            <Button size="sm" onClick={handleAddToCart} disabled={!item.available} className="rounded-full">
-              <Plus className="h-4 w-4" />
-            </Button>
+        <div className="relative h-32 mb-3 rounded-lg overflow-hidden">
+          <Image src={item.image || "/placeholder.svg"} alt={item.name} fill className="object-cover" />
+          {!item.available && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+              <Badge variant="destructive">አይገኝም</Badge>
+            </div>
+          )}
+        </div>
+        <h3 className="font-semibold text-lg mb-2">{item.name}</h3>
+        <p className="text-gray-600 text-sm mb-3 line-clamp-2">{item.description}</p>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xl font-bold text-green-600">{item.price} ብር</span>
+          <div className="flex items-center text-gray-500 text-sm">
+            <Clock className="h-4 w-4 mr-1" />
+            {item.preparationTime} ደቂቃ
           </div>
         </div>
       </CardContent>
+      <CardFooter className="p-4 pt-0">
+        <Button onClick={() => onAddToCart(item)} disabled={!item.available} className="w-full">
+          <Plus className="h-4 w-4 mr-2" />
+          ወደ ጋሪ ጨምር
+        </Button>
+      </CardFooter>
     </Card>
   )
 }

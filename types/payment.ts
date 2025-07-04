@@ -1,62 +1,100 @@
 export interface PaymentMethod {
   id: string
   name: string
-  type: "cash" | "card" | "mobile" | "bank" | "credit" | "voucher"
+  type: "cash" | "card" | "mobile" | "bank_transfer"
+  icon: string
   enabled: boolean
   processingFee?: number
-  icon?: string
 }
 
-export interface PaymentTransaction {
+export interface Payment {
   id: string
   orderId: string
   amount: number
   method: PaymentMethod
   status: "pending" | "processing" | "completed" | "failed" | "refunded"
   transactionId?: string
-  timestamp: Date
-  receiptNumber?: string
+  createdAt: Date
+  completedAt?: Date
+  failureReason?: string
   refundAmount?: number
   refundReason?: string
-  customerInfo?: {
-    name?: string
-    phone?: string
-    email?: string
-  }
 }
 
-export interface Receipt {
-  id: string
-  receiptNumber: string
-  orderId: string
-  items: Array<{
-    name: string
-    quantity: number
-    price: number
-    total: number
-  }>
+export interface PaymentSummary {
   subtotal: number
   tax: number
   discount: number
   total: number
-  paymentMethod: string
-  timestamp: Date
-  cashier: string
-  restaurantInfo: {
-    name: string
-    address: string
-    phone: string
-  }
+  amountPaid: number
+  change: number
 }
 
-export interface PaymentStats {
-  totalRevenue: number
-  totalTransactions: number
-  averageOrderValue: number
-  paymentMethodBreakdown: Record<string, number>
-  dailyRevenue: Array<{
-    date: string
-    revenue: number
-    transactions: number
-  }>
+export interface Receipt {
+  id: string
+  orderId: string
+  paymentId: string
+  receiptNumber: string
+  items: ReceiptItem[]
+  summary: PaymentSummary
+  paymentMethod: PaymentMethod
+  customerInfo?: CustomerInfo
+  timestamp: Date
+  cashier: string
 }
+
+export interface ReceiptItem {
+  name: string
+  quantity: number
+  unitPrice: number
+  total: number
+}
+
+export interface CustomerInfo {
+  name?: string
+  phone?: string
+  email?: string
+  address?: string
+}
+
+export const paymentMethods: PaymentMethod[] = [
+  {
+    id: "cash",
+    name: "ጥሬ ገንዘብ",
+    type: "cash",
+    icon: "banknote",
+    enabled: true,
+  },
+  {
+    id: "telebirr",
+    name: "ቴሌ ብር",
+    type: "mobile",
+    icon: "smartphone",
+    enabled: true,
+    processingFee: 0.02,
+  },
+  {
+    id: "cbe-birr",
+    name: "ሲቢኢ ብር",
+    type: "mobile",
+    icon: "smartphone",
+    enabled: true,
+    processingFee: 0.015,
+  },
+  {
+    id: "visa",
+    name: "ቪዛ ካርድ",
+    type: "card",
+    icon: "credit-card",
+    enabled: true,
+    processingFee: 0.025,
+  },
+  {
+    id: "mastercard",
+    name: "ማስተር ካርድ",
+    type: "card",
+    icon: "credit-card",
+    enabled: true,
+    processingFee: 0.025,
+  },
+]

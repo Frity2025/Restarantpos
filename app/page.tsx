@@ -2,53 +2,48 @@
 
 import { useState } from "react"
 import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { SidebarNav } from "@/components/sidebar-nav"
+import { DiningMode } from "@/components/dining-mode"
+import { CategoryFilter } from "@/components/category-filter"
 import { FoodGrid } from "@/components/food-grid"
 import { Cart } from "@/components/cart"
-import { CategoryFilter } from "@/components/category-filter"
-import { DiningMode } from "@/components/dining-mode"
-import { SidebarNav } from "@/components/sidebar-nav"
-import { useAuth } from "@/contexts/auth-context"
+import { Footer } from "@/components/footer"
 import { LoginForm } from "@/components/login-form"
+import { useAuth } from "@/contexts/auth-context"
+import { useCart } from "@/contexts/cart-context"
 
 export default function HomePage() {
   const { employee } = useAuth()
-  const [selectedCategory, setSelectedCategory] = useState<string>("ሁሉም")
+  const { addItem } = useCart()
+  const [selectedDiningMode, setSelectedDiningMode] = useState("dine-in")
+  const [selectedCategory, setSelectedCategory] = useState("all")
 
   if (!employee) {
     return <LoginForm />
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-50">
       <SidebarNav />
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col">
         <Header />
 
-        <div className="flex-1 flex">
-          {/* Left Panel - Food Selection */}
-          <div className="flex-1 flex flex-col">
-            {/* Dining Mode Selector */}
-            <div className="p-4 bg-white border-b">
-              <DiningMode />
-            </div>
+        <main className="flex-1 flex overflow-hidden">
+          <div className="flex-1 p-6 overflow-y-auto">
+            <div className="max-w-7xl mx-auto">
+              <DiningMode selectedMode={selectedDiningMode} onModeChange={setSelectedDiningMode} />
 
-            {/* Category Filter */}
-            <div className="p-4 bg-white border-b">
               <CategoryFilter selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
-            </div>
 
-            {/* Food Grid */}
-            <div className="flex-1 overflow-auto">
-              <FoodGrid selectedCategory={selectedCategory} />
+              <FoodGrid selectedCategory={selectedCategory} onAddToCart={addItem} />
             </div>
           </div>
 
-          {/* Right Panel - Cart */}
-          <Cart />
-        </div>
+          <div className="w-80 p-6">
+            <Cart />
+          </div>
+        </main>
 
         <Footer />
       </div>

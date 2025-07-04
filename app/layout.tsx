@@ -4,12 +4,14 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/contexts/auth-context"
 import { CartProvider } from "@/contexts/cart-context"
+import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "የኢትዮጵያ ምግብ ቤት POS ስርዓት",
-  description: "ሙሉ የምግብ ቤት አስተዳደር ስርዓት",
+  title: "ቺሊ POS - የምግብ ቤት የመሸጫ ስርዓት",
+  description: "ሙሉ ባህሪ ያለው የምግብ ቤት የመሸጫ ስርዓት",
     generator: 'v0.dev'
 }
 
@@ -19,11 +21,16 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="am">
+    <html lang="am" suppressHydrationWarning>
       <body className={inter.className}>
-        <AuthProvider>
-          <CartProvider>{children}</CartProvider>
-        </AuthProvider>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+          <AuthProvider>
+            <CartProvider>
+              {children}
+              <Toaster />
+            </CartProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

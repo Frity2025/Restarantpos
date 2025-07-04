@@ -49,3 +49,9 @@ export async function authenticateUser(username: string, password: string) {
     error: "የተጠቃሚ ስም ወይም የይለፍ ቃል ትክክል አይደለም",
   }
 }
+
+export function hasPermission(employee: any, permission: string): boolean {
+  if (!employee) return false
+  if (employee.role === "admin" || employee.permissions.includes("all")) return true
+  return employee.permissions.includes(permission)
+}

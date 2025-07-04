@@ -3,10 +3,10 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, LogIn } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
@@ -28,11 +28,11 @@ export function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-green-600">የኢትዮጵያ ምግብ ቤት POS</CardTitle>
-          <p className="text-gray-600">እባክዎ ይግቡ</p>
+          <CardTitle className="text-2xl font-bold">ቺሊ POS</CardTitle>
+          <CardDescription>የምግብ ቤት የመሸጫ ስርዓት</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -47,7 +47,6 @@ export function LoginForm() {
                 required
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="password">የይለፍ ቃል</Label>
               <Input
@@ -59,13 +58,11 @@ export function LoginForm() {
                 required
               />
             </div>
-
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <>
@@ -83,9 +80,9 @@ export function LoginForm() {
 
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
             <p className="text-sm font-medium mb-2">የሙከራ መለያዎች:</p>
-            <div className="space-y-1 text-xs">
+            <div className="text-xs space-y-1">
               <p>
-                <strong>አድሚን:</strong> admin / admin123
+                <strong>አስተዳዳሪ:</strong> admin / admin123
               </p>
               <p>
                 <strong>ገንዘብ ተቀባይ:</strong> cashier / cashier123
