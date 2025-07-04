@@ -1,4 +1,17 @@
-// የጠረጴዛ ሁኔታዎች
+export interface Table {
+  id: string
+  number: string
+  capacity: number
+  status: TableStatus
+  location: TableLocation
+  shape: TableShape
+  currentOrder?: string
+  reservedBy?: string
+  reservedUntil?: Date
+  lastCleaned?: Date
+  notes?: string
+}
+
 export type TableStatus =
   | "available" // ክፍት
   | "occupied" // የተያዘ
@@ -6,97 +19,60 @@ export type TableStatus =
   | "cleaning" // እየተጸዳ
   | "maintenance" // በጥገና ላይ
 
-// የጠረጴዛ አይነቶች
-export type TableType = "regular" | "vip" | "outdoor" | "bar" | "private"
+export type TableLocation =
+  | "main_hall" // ዋና አዳራሽ
+  | "private_room" // የግል ክፍል
+  | "outdoor" // ውጪ
+  | "bar_area" // የባር አካባቢ
 
-// የጠረጴዛ መረጃ
-export interface Table {
-  id: string
-  number: string
-  capacity: number
-  type: TableType
-  status: TableStatus
-  location: {
-    x: number // የX መጋጠሚያ
-    y: number // የY መጋጠሚያ
-    width: number
-    height: number
-  }
-  currentOrderId?: string
-  currentCustomer?: string
-  occupiedAt?: Date
-  estimatedDuration?: number // በደቂቃ
-  features: string[] // ["window_view", "quiet", "accessible", etc.]
-  isActive: boolean
-}
+export type TableShape =
+  | "round" // ክብ
+  | "square" // ካሬ
+  | "rectangular" // አራት ማዕዘን
 
-// የቦታ ማስያዝ ሁኔታዎች
-export type ReservationStatus =
-  | "pending" // በመጠባበቅ ላይ
-  | "confirmed" // ተረጋግጧል
-  | "seated" // ተቀምጧል
-  | "completed" // ተጠናቋል
-  | "cancelled" // ተሰርዟል
-  | "no_show" // አልመጣም
-
-// የቦታ ማስያዝ መረጃ
 export interface Reservation {
   id: string
-  reservationNumber: string
+  tableId: string
   customerName: string
   customerPhone: string
   customerEmail?: string
   partySize: number
   reservationDate: Date
   reservationTime: string
-  duration: number // በደቂቃ
+  duration: number // in minutes
   status: ReservationStatus
-  tableId?: string
-  tableNumber?: string
   specialRequests?: string
-  notes?: string
   createdAt: Date
-  updatedAt: Date
-  seatedAt?: Date
-  completedAt?: Date
-  employeeId: string
-  employeeName: string
-  reminderSent?: boolean
+  createdBy: string
+  notes?: string
+  priority: ReservationPriority
 }
 
-// የጠረጴዛ ስታቲስቲክስ
+export type ReservationStatus =
+  | "confirmed" // ተረጋግጧል
+  | "pending" // በመጠባበቅ ላይ
+  | "seated" // ተቀምጧል
+  | "completed" // ተጠናቋል
+  | "cancelled" // ተሰርዟል
+  | "no_show" // አልመጣም
+
+export type ReservationPriority =
+  | "normal" // መደበኛ
+  | "high" // ከፍተኛ
+  | "vip" // ቪአይፒ
+
+export interface TimeSlot {
+  time: string
+  available: boolean
+  tableIds: string[]
+}
+
 export interface TableStats {
   totalTables: number
   availableTables: number
   occupiedTables: number
   reservedTables: number
-  averageOccupancyRate: number
+  cleaningTables: number
+  occupancyRate: number
   averageTurnoverTime: number
-  totalReservations: number
-  confirmedReservations: number
-  cancelledReservations: number
-  noShowReservations: number
-  revenueByTable: Array<{
-    tableId: string
-    tableNumber: string
-    revenue: number
-    orders: number
-  }>
-}
-
-// የቦታ ማስያዝ ማጣሪያ
-export interface ReservationFilter {
-  status?: ReservationStatus[]
-  date?: Date
-  timeSlot?: string
-  partySize?: number
-  customerName?: string
-}
-
-// የጊዜ ክፍል
-export interface TimeSlot {
-  time: string
-  available: boolean
-  tablesAvailable: number
-  reservations: number
 }

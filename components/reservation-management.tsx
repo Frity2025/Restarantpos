@@ -3,527 +3,414 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Eye, RefreshCw, Filter, Calendar, Phone, Users, Mail, Clock } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Search, Calendar, Phone, Users, Clock, Filter } from "lucide-react"
 import { tableManager } from "@/lib/table-management"
-import type { Reservation, ReservationStatus, ReservationFilter } from "@/types/table"
-
-const statusNames: Record<ReservationStatus, string> = {
-  pending: "በመጠባበቅ ላይ",
-  confirmed: "ተረጋግጧል",
-  seated: "ተቀምጧል",
-  completed: "ተጠናቋል",
-  cancelled: "ተሰርዟል",
-  no_show: "አልመጣም",
-}
-
-const statusColors: Record<ReservationStatus, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  confirmed: "bg-blue-100 text-blue-800",
-  seated: "bg-green-100 text-green-800",
-  completed: "bg-gray-100 text-gray-800",
-  cancelled: "bg-red-100 text-red-800",
-  no_show: "bg-orange-100 text-orange-800",
-}
+import type { Reservation } from "@/types/table"
+import { format } from "date-fns"
 
 export function ReservationManagement() {
   const [reservations, setReservations] = useState<Reservation[]>([])
-  const [filteredReservations, setFilteredReservations] = useState<Reservation[]>([])
+  const [todayReservations, setTodayReservations] = useState<Reservation[]>([])
   const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
-  const [filter, setFilter] = useState<ReservationFilter>({
-    status: [],
-    date: new Date(),
-  })
-  const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
-    loadReservations()
+    setReservations(tableManager.getAllReservations())
+    setTodayReservations(tableManager.getTodayReservations())
   }, [])
 
-  useEffect(() => {
-    applyFilters()
-  }, [reservations, searchTerm, filter])
-
-  const loadReservations = () => {
-    const allReservations = tableManager.getAllReservations()
-    setReservations(allReservations)
-  }
-
-  const applyFilters = () => {
-    let filtered = tableManager.getFilteredReservations(filter)
-
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (reservation) =>
-          reservation.reservationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          reservation.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          reservation.customerPhone.includes(searchTerm),
-      )
+  const getStatusColor = (status: Reservation["status"]) => {
+    switch (status) {
+      case "confirmed":
+        return "bg-green-100 text-green-800"
+      case "pending":
+        return "bg-yellow-100 text-yellow-800"
+      case "seated":
+        return "bg-blue-100 text-blue-800"
+      case "completed":
+        return "bg-gray-100 text-gray-800"
+      case "cancelled":
+        return "bg-red-100 text-red-800"
+      case "no_show":
+        return "bg-orange-100 text-orange-800"
+      default:
+        return "bg-gray-100 text-gray-800"
     }
-
-    setFilteredReservations(filtered)
   }
 
-  const handleStatusChange = (reservationId: string, newStatus: ReservationStatus) => {
-    tableManager.updateReservationStatus(reservationId, newStatus)
-    loadReservations()
+  const getStatusText = (status: Reservation["status"]) => {
+    switch (status) {
+      case "confirmed":
+        return "ተረጋግጧል"
+      case "pending":
+        return "በመጠባበቅ ላይ"
+      case "seated":
+        return "ተቀምጧል"
+      case "completed":
+        return "ተጠናቋል"
+      case "cancelled":
+        return "ተሰርዟል"
+      case "no_show":
+        return "አልመጣም"
+      default:
+        return "ያልታወቀ"
+    }
   }
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleString("am-ET", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
+  const getPriorityColor = (priority: Reservation["priority"]) => {
+    switch (priority) {
+      case "high":
+        return "bg-orange-100 text-orange-800"
+      case "vip":
+        return "bg-purple-100 text-purple-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
   }
 
-  const getTodayReservations = () => {
-    const today = new Date().toDateString()
-    return reservations.filter((res) => res.reservationDate.toDateString() === today)
+  const getPriorityText = (priority: Reservation["priority"]) => {
+    switch (priority) {
+      case "high":
+        return "ከፍተኛ"
+      case "vip":
+        return "ቪአይፒ"
+      default:
+        return "መደበኛ"
+    }
   }
 
-  const getUpcomingReservations = () => {
-    const now = new Date()
-    const today = now.toDateString()
-    const currentTime = now.getHours() * 60 + now.getMinutes()
-
-    return reservations
-      .filter((res) => {
-        if (res.reservationDate.toDateString() === today) {
-          const [hours, minutes] = res.reservationTime.split(":")
-          const resTime = Number.parseInt(hours) * 60 + Number.parseInt(minutes)
-          return resTime > currentTime && (res.status === "confirmed" || res.status === "pending")
-        }
-        return res.reservationDate > now && (res.status === "confirmed" || res.status === "pending")
-      })
-      .slice(0, 5)
+  const handleStatusChange = (reservationId: string, newStatus: Reservation["status"]) => {
+    if (tableManager.updateReservationStatus(reservationId, newStatus)) {
+      setReservations(tableManager.getAllReservations())
+      setTodayReservations(tableManager.getTodayReservations())
+      if (selectedReservation?.id === reservationId) {
+        setSelectedReservation(tableManager.getReservationById(reservationId) || null)
+      }
+    }
   }
+
+  const filteredReservations = reservations.filter((reservation) => {
+    const matchesSearch =
+      reservation.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      reservation.customerPhone.includes(searchTerm)
+    const matchesStatus = statusFilter === "all" || reservation.status === statusFilter
+    return matchesSearch && matchesStatus
+  })
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">የቦታ ማስያዝ አስተዳደር</h2>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
-            <Filter className="mr-2 h-4 w-4" />
-            ማጣሪያ
-          </Button>
-          <Button onClick={loadReservations}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            አድስ
-          </Button>
-        </div>
-      </div>
-
-      {/* ዛሬ እና ቀጣይ ቦታ ማስያዞች */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              ዛሬ ቦታ ማስያዞች ({getTodayReservations().length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {getTodayReservations()
-                .slice(0, 5)
-                .map((reservation) => (
-                  <div key={reservation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium">{reservation.customerName}</p>
-                      <p className="text-sm text-gray-600">
-                        {reservation.reservationTime} - {reservation.partySize} ሰዎች
-                      </p>
-                    </div>
-                    <Badge className={statusColors[reservation.status]}>{statusNames[reservation.status]}</Badge>
-                  </div>
-                ))}
-              {getTodayReservations().length === 0 && <p className="text-gray-500 text-center py-4">ዛሬ ቦታ ማስያዝ የለም</p>}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>ቀጣይ ቦታ ማስያዞች</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {getUpcomingReservations().map((reservation) => (
-                <div key={reservation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">{reservation.customerName}</p>
-                    <p className="text-sm text-gray-600">
-                      {reservation.reservationDate.toLocaleDateString("am-ET")} {reservation.reservationTime}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium">{reservation.partySize} ሰዎች</p>
-                    <Badge className={statusColors[reservation.status]} className="text-xs">
-                      {statusNames[reservation.status]}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-              {getUpcomingReservations().length === 0 && (
-                <p className="text-gray-500 text-center py-4">ቀጣይ ቦታ ማስያዝ የለም</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* ፍለጋ እና ማጣሪያ */}
-      <div className="space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="ቦታ ማስያዝ ፈልግ (ቁጥር፣ ደንበኛ፣ ስልክ)..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
-        {showFilters && (
-          <Card>
-            <CardContent className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">ሁኔታ</label>
-                  <Select
-                    value={filter.status?.[0] || "all"}
-                    onValueChange={(value) =>
-                      setFilter({ ...filter, status: value === "all" ? [] : [value as ReservationStatus] })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="ሁሉም ሁኔታዎች" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">ሁሉም ሁኔታዎች</SelectItem>
-                      {Object.entries(statusNames).map(([key, value]) => (
-                        <SelectItem key={key} value={key}>
-                          {value}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">ቀን</label>
-                  <Input
-                    type="date"
-                    value={filter.date?.toISOString().split("T")[0] || ""}
-                    onChange={(e) =>
-                      setFilter({ ...filter, date: e.target.value ? new Date(e.target.value) : undefined })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">የሰዎች ብዛት</label>
-                  <Select
-                    value={filter.partySize?.toString() || "all"}
-                    onValueChange={(value) =>
-                      setFilter({ ...filter, partySize: value === "all" ? undefined : Number.parseInt(value) })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="ሁሉም" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">ሁሉም</SelectItem>
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((size) => (
-                        <SelectItem key={size} value={size.toString()}>
-                          {size} {size === 1 ? "ሰው" : "ሰዎች"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* የቦታ ማስያዝ ዝርዝር */}
+    <div className="space-y-6">
+      {/* Search and Filter */}
       <Card>
-        <CardHeader>
-          <CardTitle>ቦታ ማስያዞች ({filteredReservations.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ቁጥር</TableHead>
-                <TableHead>ደንበኛ</TableHead>
-                <TableHead>ስልክ</TableHead>
-                <TableHead>ቀን</TableHead>
-                <TableHead>ጊዜ</TableHead>
-                <TableHead>ሰዎች</TableHead>
-                <TableHead>ጠረጴዛ</TableHead>
-                <TableHead>ሁኔታ</TableHead>
-                <TableHead>ተግባሮች</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredReservations.map((reservation) => (
-                <TableRow key={reservation.id}>
-                  <TableCell className="font-medium">{reservation.reservationNumber}</TableCell>
-                  <TableCell>{reservation.customerName}</TableCell>
-                  <TableCell>{reservation.customerPhone}</TableCell>
-                  <TableCell>{reservation.reservationDate.toLocaleDateString("am-ET")}</TableCell>
-                  <TableCell>{reservation.reservationTime}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Users className="h-4 w-4" />
-                      {reservation.partySize}
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="በስም ወይም ስልክ ቁጥር ፈልግ..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="ሁኔታ ምረጥ" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">ሁሉም ሁኔታዎች</SelectItem>
+                <SelectItem value="confirmed">ተረጋግጧል</SelectItem>
+                <SelectItem value="pending">በመጠባበቅ ላይ</SelectItem>
+                <SelectItem value="seated">ተቀምጧል</SelectItem>
+                <SelectItem value="completed">ተጠናቋል</SelectItem>
+                <SelectItem value="cancelled">ተሰርዟል</SelectItem>
+                <SelectItem value="no_show">አልመጣም</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Tabs defaultValue="today" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="today">የዛሬ ቦታ ማስያዞች ({todayReservations.length})</TabsTrigger>
+          <TabsTrigger value="all">ሁሉም ቦታ ማስያዞች ({filteredReservations.length})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="today" className="space-y-4">
+          {todayReservations.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">ዛሬ ምንም ቦታ ማስያዝ የለም</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {todayReservations.map((reservation) => (
+                <Card key={reservation.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div>
+                          <h3 className="font-semibold">{reservation.customerName}</h3>
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <span className="flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              {reservation.customerPhone}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              {reservation.partySize} ሰዎች
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {reservation.reservationTime}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {reservation.priority !== "normal" && (
+                          <Badge className={getPriorityColor(reservation.priority)}>
+                            {getPriorityText(reservation.priority)}
+                          </Badge>
+                        )}
+                        <Badge className={getStatusColor(reservation.status)}>
+                          {getStatusText(reservation.status)}
+                        </Badge>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" onClick={() => setSelectedReservation(reservation)}>
+                              ዝርዝር
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>የቦታ ማስያዝ ዝርዝር</DialogTitle>
+                            </DialogHeader>
+                            {selectedReservation && (
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  <div>
+                                    <p className="font-medium">ደንበኛ</p>
+                                    <p>{selectedReservation.customerName}</p>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">ስልክ</p>
+                                    <p>{selectedReservation.customerPhone}</p>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">የሰዎች ቁጥር</p>
+                                    <p>{selectedReservation.partySize}</p>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">ጠረጴዛ</p>
+                                    <p>{tableManager.getTableById(selectedReservation.tableId)?.number}</p>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">ቀን</p>
+                                    <p>{format(selectedReservation.reservationDate, "PPP")}</p>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">ሰዓት</p>
+                                    <p>{selectedReservation.reservationTime}</p>
+                                  </div>
+                                </div>
+
+                                {selectedReservation.specialRequests && (
+                                  <div>
+                                    <p className="font-medium">ልዩ ጥያቄዎች</p>
+                                    <p className="text-sm text-gray-600">{selectedReservation.specialRequests}</p>
+                                  </div>
+                                )}
+
+                                <div className="space-y-2">
+                                  <p className="font-medium">ሁኔታ ቀይር</p>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant={selectedReservation.status === "confirmed" ? "default" : "outline"}
+                                      onClick={() => handleStatusChange(selectedReservation.id, "confirmed")}
+                                    >
+                                      ተረጋግጧል
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant={selectedReservation.status === "seated" ? "default" : "outline"}
+                                      onClick={() => handleStatusChange(selectedReservation.id, "seated")}
+                                    >
+                                      ተቀምጧል
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant={selectedReservation.status === "completed" ? "default" : "outline"}
+                                      onClick={() => handleStatusChange(selectedReservation.id, "completed")}
+                                    >
+                                      ተጠናቋል
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant={selectedReservation.status === "cancelled" ? "default" : "outline"}
+                                      onClick={() => handleStatusChange(selectedReservation.id, "cancelled")}
+                                    >
+                                      ተሰርዟል
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </DialogContent>
+                        </Dialog>
+                      </div>
                     </div>
-                  </TableCell>
-                  <TableCell>{reservation.tableNumber || "-"}</TableCell>
-                  <TableCell>
-                    <Select
-                      value={reservation.status}
-                      onValueChange={(value) => handleStatusChange(reservation.id, value as ReservationStatus)}
-                    >
-                      <SelectTrigger className="w-32">
-                        <Badge className={statusColors[reservation.status]}>{statusNames[reservation.status]}</Badge>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(statusNames).map(([key, value]) => (
-                          <SelectItem key={key} value={key}>
-                            {value}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <Button size="sm" variant="outline" onClick={() => setSelectedReservation(reservation)}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
+                  </CardContent>
+                </Card>
               ))}
-            </TableBody>
-          </Table>
-
-          {filteredReservations.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500">ምንም ቦታ ማስያዝ አልተገኘም</p>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </TabsContent>
 
-      {/* የቦታ ማስያዝ ዝርዝር ሞዳል */}
-      {selectedReservation && (
-        <ReservationDetailsModal
-          reservation={selectedReservation}
-          onClose={() => setSelectedReservation(null)}
-          onStatusChange={handleStatusChange}
-        />
-      )}
-    </div>
-  )
-}
+        <TabsContent value="all" className="space-y-4">
+          {filteredReservations.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">ምንም ቦታ ማስያዝ አልተገኘም</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {filteredReservations.map((reservation) => (
+                <Card key={reservation.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div>
+                          <h3 className="font-semibold">{reservation.customerName}</h3>
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {format(reservation.reservationDate, "MMM dd")}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {reservation.reservationTime}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              {reservation.partySize} ሰዎች
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {reservation.priority !== "normal" && (
+                          <Badge className={getPriorityColor(reservation.priority)}>
+                            {getPriorityText(reservation.priority)}
+                          </Badge>
+                        )}
+                        <Badge className={getStatusColor(reservation.status)}>
+                          {getStatusText(reservation.status)}
+                        </Badge>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" onClick={() => setSelectedReservation(reservation)}>
+                              ዝርዝር
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>የቦታ ማስያዝ ዝርዝር</DialogTitle>
+                            </DialogHeader>
+                            {selectedReservation && (
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  <div>
+                                    <p className="font-medium">ደንበኛ</p>
+                                    <p>{selectedReservation.customerName}</p>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">ስልክ</p>
+                                    <p>{selectedReservation.customerPhone}</p>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">የሰዎች ቁጥር</p>
+                                    <p>{selectedReservation.partySize}</p>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">ጠረጴዛ</p>
+                                    <p>{tableManager.getTableById(selectedReservation.tableId)?.number}</p>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">ቀን</p>
+                                    <p>{format(selectedReservation.reservationDate, "PPP")}</p>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">ሰዓት</p>
+                                    <p>{selectedReservation.reservationTime}</p>
+                                  </div>
+                                </div>
 
-// የቦታ ማስያዝ ዝርዝር ሞዳል
-function ReservationDetailsModal({
-  reservation,
-  onClose,
-  onStatusChange,
-}: {
-  reservation: Reservation
-  onClose: () => void
-  onStatusChange: (id: string, status: ReservationStatus) => void
-}) {
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-auto">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>ቦታ ማስያዝ ዝርዝር - {reservation.reservationNumber}</CardTitle>
-            <Button variant="ghost" onClick={onClose}>
-              ✕
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* የደንበኛ መረጃ */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h4 className="font-semibold mb-2">የደንበኛ መረጃ</h4>
-              <div className="space-y-2">
-                <p>
-                  <strong>ስም:</strong> {reservation.customerName}
-                </p>
-                <p className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  {reservation.customerPhone}
-                </p>
-                {reservation.customerEmail && (
-                  <p className="flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    {reservation.customerEmail}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">የቦታ ማስያዝ መረጃ</h4>
-              <div className="space-y-2">
-                <p className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  {reservation.reservationDate.toLocaleDateString("am-ET")}
-                </p>
-                <p className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  {reservation.reservationTime}
-                </p>
-                <p className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  {reservation.partySize} ሰዎች
-                </p>
-                <p>
-                  <strong>ቆይታ:</strong> {reservation.duration} ደቂቃ
-                </p>
-              </div>
-            </div>
-          </div>
+                                {selectedReservation.specialRequests && (
+                                  <div>
+                                    <p className="font-medium">ልዩ ጥያቄዎች</p>
+                                    <p className="text-sm text-gray-600">{selectedReservation.specialRequests}</p>
+                                  </div>
+                                )}
 
-          {/* ሁኔታ እና ጠረጴዛ */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h4 className="font-semibold mb-2">ሁኔታ</h4>
-              <Badge className={statusColors[reservation.status]}>{statusNames[reservation.status]}</Badge>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">ጠረጴዛ</h4>
-              <p>{reservation.tableNumber ? `ጠረጴዛ ${reservation.tableNumber}` : "አልተመደበም"}</p>
-            </div>
-          </div>
-
-          {/* ልዩ ጥያቄዎች እና ማስታወሻዎች */}
-          {(reservation.specialRequests || reservation.notes) && (
-            <div>
-              <h4 className="font-semibold mb-2">ማስታወሻዎች</h4>
-              {reservation.specialRequests && (
-                <p className="text-sm bg-blue-50 p-2 rounded mb-2">
-                  <strong>ልዩ ጥያቄዎች:</strong> {reservation.specialRequests}
-                </p>
-              )}
-              {reservation.notes && (
-                <p className="text-sm bg-gray-50 p-2 rounded">
-                  <strong>ማስታወሻ:</strong> {reservation.notes}
-                </p>
-              )}
+                                <div className="space-y-2">
+                                  <p className="font-medium">ሁኔታ ቀይር</p>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant={selectedReservation.status === "confirmed" ? "default" : "outline"}
+                                      onClick={() => handleStatusChange(selectedReservation.id, "confirmed")}
+                                    >
+                                      ተረጋግጧል
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant={selectedReservation.status === "seated" ? "default" : "outline"}
+                                      onClick={() => handleStatusChange(selectedReservation.id, "seated")}
+                                    >
+                                      ተቀምጧል
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant={selectedReservation.status === "completed" ? "default" : "outline"}
+                                      onClick={() => handleStatusChange(selectedReservation.id, "completed")}
+                                    >
+                                      ተጠናቋል
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant={selectedReservation.status === "cancelled" ? "default" : "outline"}
+                                      onClick={() => handleStatusChange(selectedReservation.id, "cancelled")}
+                                    >
+                                      ተሰርዟል
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
-
-          {/* የጊዜ መረጃ */}
-          <div>
-            <h4 className="font-semibold mb-2">የጊዜ መረጃ</h4>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <p>
-                <strong>ተፈጠረ:</strong> {reservation.createdAt.toLocaleString("am-ET")}
-              </p>
-              <p>
-                <strong>ተዘመነ:</strong> {reservation.updatedAt.toLocaleString("am-ET")}
-              </p>
-              {reservation.seatedAt && (
-                <p>
-                  <strong>ተቀመጠ:</strong> {reservation.seatedAt.toLocaleString("am-ET")}
-                </p>
-              )}
-              {reservation.completedAt && (
-                <p>
-                  <strong>ተጠናቀቀ:</strong> {reservation.completedAt.toLocaleString("am-ET")}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* ሰራተኛ መረጃ */}
-          <div>
-            <h4 className="font-semibold mb-2">ሰራተኛ</h4>
-            <p>{reservation.employeeName}</p>
-          </div>
-
-          {/* ሁኔታ ቀይር */}
-          <div>
-            <h4 className="font-semibold mb-2">ሁኔታ ቀይር</h4>
-            <div className="grid grid-cols-3 gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="bg-blue-50 hover:bg-blue-100"
-                onClick={() => {
-                  onStatusChange(reservation.id, "confirmed")
-                  onClose()
-                }}
-              >
-                አረጋግጥ
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="bg-green-50 hover:bg-green-100"
-                onClick={() => {
-                  onStatusChange(reservation.id, "seated")
-                  onClose()
-                }}
-              >
-                ተቀመጠ
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="bg-gray-50 hover:bg-gray-100"
-                onClick={() => {
-                  onStatusChange(reservation.id, "completed")
-                  onClose()
-                }}
-              >
-                ተጠናቀቀ
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="bg-red-50 hover:bg-red-100"
-                onClick={() => {
-                  onStatusChange(reservation.id, "cancelled")
-                  onClose()
-                }}
-              >
-                ሰርዝ
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="bg-orange-50 hover:bg-orange-100"
-                onClick={() => {
-                  onStatusChange(reservation.id, "no_show")
-                  onClose()
-                }}
-              >
-                አልመጣም
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

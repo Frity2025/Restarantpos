@@ -26,20 +26,26 @@ export function SidebarNav() {
             {navItems[0].label}
           </Button>
         </Link>
-        {navItems.slice(1).map((item, index) => (
-          <Button key={index + 1} variant="ghost" className={`w-full justify-start ${item.color}`}>
-            {item.icon}
-            {item.label}
-          </Button>
-        ))}
-        {additionalNavItems.map((item, index) => (
-          <Link key={`additional-${index}`} href={item.href}>
-            <Button variant="ghost" className={`w-full justify-start ${item.color}`}>
-              {item.icon}
+        {navItems.slice(1).map((item, index) => {
+          const IconComponent = item.icon
+          return (
+            <Button key={index + 1} variant="ghost" className={`w-full justify-start ${item.color}`}>
+              <IconComponent className="mr-2 h-4 w-4" />
               {item.label}
             </Button>
-          </Link>
-        ))}
+          )
+        })}
+        {additionalNavItems.map((item, index) => {
+          const IconComponent = item.icon
+          return (
+            <Link key={`additional-${index}`} href={item.href}>
+              <Button variant="ghost" className={`w-full justify-start ${item.color}`}>
+                <IconComponent className="mr-2 h-4 w-4" />
+                {item.label}
+              </Button>
+            </Link>
+          )
+        })}
       </nav>
       <Button variant="ghost" className="w-full justify-start mt-auto text-gray-600 absolute bottom-4">
         <LogOut className="mr-2 h-4 w-4" />

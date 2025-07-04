@@ -1,506 +1,290 @@
-import type {
-  Table,
-  Reservation,
-  TableStatus,
-  ReservationStatus,
-  TableStats,
-  ReservationFilter,
-  TimeSlot,
-} from "@/types/table"
+import type { Table, Reservation, TableStatus, TimeSlot, TableStats, ReservationStatus } from "@/types/table"
 
-// ናሙና ጠረጴዛዎች
-const tables: Table[] = [
-  // ዋና አዳራሽ ጠረጴዛዎች
-  {
-    id: "table-001",
-    number: "1",
-    capacity: 2,
-    type: "regular",
-    status: "available",
-    location: { x: 50, y: 50, width: 80, height: 80 },
-    features: ["window_view"],
-    isActive: true,
-  },
-  {
-    id: "table-002",
-    number: "2",
-    capacity: 4,
-    type: "regular",
-    status: "occupied",
-    location: { x: 150, y: 50, width: 100, height: 80 },
-    currentOrderId: "order-001",
-    currentCustomer: "ፍሎይድ ማይልስ",
-    occupiedAt: new Date(Date.now() - 30 * 60 * 1000),
-    estimatedDuration: 60,
-    features: [],
-    isActive: true,
-  },
-  {
-    id: "table-003",
-    number: "3",
-    capacity: 6,
-    type: "regular",
-    status: "reserved",
-    location: { x: 270, y: 50, width: 120, height: 100 },
-    features: ["large_group"],
-    isActive: true,
-  },
-  {
-    id: "table-004",
-    number: "4",
-    capacity: 2,
-    type: "regular",
-    status: "cleaning",
-    location: { x: 50, y: 170, width: 80, height: 80 },
-    features: [],
-    isActive: true,
-  },
-  {
-    id: "table-005",
-    number: "5",
-    capacity: 8,
-    type: "vip",
-    status: "available",
-    location: { x: 150, y: 170, width: 140, height: 120 },
-    features: ["vip", "private", "quiet"],
-    isActive: true,
-  },
-  {
-    id: "table-006",
-    number: "6",
-    capacity: 4,
-    type: "outdoor",
-    status: "available",
-    location: { x: 310, y: 170, width: 100, height: 80 },
-    features: ["outdoor", "garden_view"],
-    isActive: true,
-  },
-  // ባር ጠረጴዛዎች
-  {
-    id: "bar-001",
-    number: "B1",
-    capacity: 3,
-    type: "bar",
-    status: "available",
-    location: { x: 450, y: 50, width: 60, height: 120 },
-    features: ["bar", "standing"],
-    isActive: true,
-  },
-  {
-    id: "bar-002",
-    number: "B2",
-    capacity: 3,
-    type: "bar",
-    status: "occupied",
-    location: { x: 520, y: 50, width: 60, height: 120 },
-    currentCustomer: "አህመድ አሊ",
-    occupiedAt: new Date(Date.now() - 45 * 60 * 1000),
-    features: ["bar", "standing"],
-    isActive: true,
-  },
-]
-
-// ናሙና ቦታ ማስያዞች
-const reservations: Reservation[] = [
-  {
-    id: "res-001",
-    reservationNumber: "RES-001",
-    customerName: "ሳራ ተስፋዬ",
-    customerPhone: "+251911123456",
-    customerEmail: "sara@email.com",
-    partySize: 4,
-    reservationDate: new Date(),
-    reservationTime: "19:00",
-    duration: 90,
-    status: "confirmed",
-    tableId: "table-003",
-    tableNumber: "3",
-    specialRequests: "የልደት በዓል",
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    employeeId: "emp-002",
-    employeeName: "ፋጢማ አህመድ",
-  },
-  {
-    id: "res-002",
-    reservationNumber: "RES-002",
-    customerName: "ዳዊት መንግስቱ",
-    customerPhone: "+251911234567",
-    partySize: 2,
-    reservationDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // ነገ
-    reservationTime: "18:30",
-    duration: 60,
-    status: "pending",
-    specialRequests: "የመስኮት ጎን",
-    createdAt: new Date(Date.now() - 30 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 30 * 60 * 1000),
-    employeeId: "emp-004",
-    employeeName: "ሄለን ገብረ",
-  },
-  {
-    id: "res-003",
-    reservationNumber: "RES-003",
-    customerName: "ሚካኤል አበበ",
-    customerPhone: "+251911345678",
-    partySize: 6,
-    reservationDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // ትናንት
-    reservationTime: "20:00",
-    duration: 120,
-    status: "completed",
-    tableId: "table-005",
-    tableNumber: "5",
-    seatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + 5 * 60 * 1000),
-    completedAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + 125 * 60 * 1000),
-    createdAt: new Date(Date.now() - 25 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 22 * 60 * 60 * 1000),
-    employeeId: "emp-002",
-    employeeName: "ፋጢማ አህመድ",
-  },
-]
-
-// የጠረጴዛ አስተዳደር ክላስ
-export class TableManager {
-  private static instance: TableManager
-  private tables: Table[] = [...tables]
-  private reservations: Reservation[] = [...reservations]
-  private reservationCounter = 4
-
-  static getInstance(): TableManager {
-    if (!TableManager.instance) {
-      TableManager.instance = new TableManager()
-    }
-    return TableManager.instance
-  }
-
-  // ሁሉንም ጠረጴዛዎች ማግኘት
-  getAllTables(): Table[] {
-    return this.tables.filter((table) => table.isActive)
-  }
-
-  // በአይዲ ጠረጴዛ ማግኘት
-  getTableById(tableId: string): Table | null {
-    return this.tables.find((table) => table.id === tableId) || null
-  }
-
-  // የጠረጴዛ ሁኔታ ማዘመን
-  updateTableStatus(
-    tableId: string,
-    status: TableStatus,
-    customInfo?: {
-      orderId?: string
-      customerName?: string
-      estimatedDuration?: number
+class TableManager {
+  private tables: Table[] = [
+    {
+      id: "table-001",
+      number: "1",
+      capacity: 2,
+      status: "available",
+      location: "main_hall",
+      shape: "round",
     },
-  ): boolean {
-    const table = this.tables.find((t) => t.id === tableId)
-    if (!table) return false
+    {
+      id: "table-002",
+      number: "2",
+      capacity: 4,
+      status: "occupied",
+      location: "main_hall",
+      shape: "square",
+      currentOrder: "order-001",
+    },
+    {
+      id: "table-003",
+      number: "3",
+      capacity: 6,
+      status: "reserved",
+      location: "main_hall",
+      shape: "rectangular",
+      reservedBy: "reservation-001",
+      reservedUntil: new Date(Date.now() + 2 * 60 * 60 * 1000),
+    },
+    {
+      id: "table-004",
+      number: "4",
+      capacity: 4,
+      status: "available",
+      location: "main_hall",
+      shape: "round",
+    },
+    {
+      id: "table-005",
+      number: "5",
+      capacity: 8,
+      status: "cleaning",
+      location: "private_room",
+      shape: "rectangular",
+    },
+  ]
 
-    table.status = status
-
-    if (status === "occupied" && customInfo) {
-      table.currentOrderId = customInfo.orderId
-      table.currentCustomer = customInfo.customerName
-      table.occupiedAt = new Date()
-      table.estimatedDuration = customInfo.estimatedDuration
-    } else if (status === "available") {
-      table.currentOrderId = undefined
-      table.currentCustomer = undefined
-      table.occupiedAt = undefined
-      table.estimatedDuration = undefined
-    }
-
-    return true
-  }
-
-  // አዲስ ቦታ ማስያዝ መፍጠር
-  createReservation(reservationData: {
-    customerName: string
-    customerPhone: string
-    customerEmail?: string
-    partySize: number
-    reservationDate: Date
-    reservationTime: string
-    duration: number
-    tableId?: string
-    specialRequests?: string
-    notes?: string
-    employeeId: string
-    employeeName: string
-  }): Reservation {
-    const newReservation: Reservation = {
-      id: `res-${Date.now()}`,
-      reservationNumber: `RES-${String(this.reservationCounter++).padStart(3, "0")}`,
-      ...reservationData,
+  private reservations: Reservation[] = [
+    {
+      id: "reservation-001",
+      tableId: "table-003",
+      customerName: "አበበ ከበደ",
+      customerPhone: "+251911123456",
+      customerEmail: "abebe@email.com",
+      partySize: 4,
+      reservationDate: new Date(),
+      reservationTime: "19:00",
+      duration: 120,
+      status: "confirmed",
+      specialRequests: "የልደት በዓል",
+      createdAt: new Date(),
+      createdBy: "emp-001",
+      priority: "normal",
+    },
+    {
+      id: "reservation-002",
+      tableId: "table-001",
+      customerName: "ፋጢማ አህመድ",
+      customerPhone: "+251922234567",
+      partySize: 2,
+      reservationDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      reservationTime: "18:30",
+      duration: 90,
       status: "pending",
       createdAt: new Date(),
-      updatedAt: new Date(),
-    }
+      createdBy: "emp-002",
+      priority: "high",
+    },
+  ]
 
-    // ጠረጴዛ ተመድቧል ከሆነ ሁኔታውን ማዘመን
-    if (reservationData.tableId) {
-      const table = this.tables.find((t) => t.id === reservationData.tableId)
-      if (table) {
-        newReservation.tableNumber = table.number
-        // የቦታ ማስያዝ ጊዜ ከሆነ ጠረጴዛውን reserved ማድረግ
-        const reservationDateTime = new Date(reservationData.reservationDate)
-        const [hours, minutes] = reservationData.reservationTime.split(":")
-        reservationDateTime.setHours(Number.parseInt(hours), Number.parseInt(minutes))
-
-        const now = new Date()
-        const timeDiff = reservationDateTime.getTime() - now.getTime()
-
-        // ቦታ ማስያዝ በ30 ደቂቃ ውስጥ ከሆነ ጠረጴዛውን reserved ማድረግ
-        if (timeDiff <= 30 * 60 * 1000 && timeDiff > 0) {
-          table.status = "reserved"
-        }
-      }
-    }
-
-    this.reservations.unshift(newReservation)
-    return newReservation
+  // Table Management
+  getAllTables(): Table[] {
+    return this.tables
   }
 
-  // የቦታ ማስያዝ ሁኔታ ማዘመን
-  updateReservationStatus(reservationId: string, status: ReservationStatus): boolean {
-    const reservation = this.reservations.find((r) => r.id === reservationId)
-    if (!reservation) return false
+  getTableById(id: string): Table | undefined {
+    return this.tables.find((table) => table.id === id)
+  }
 
-    reservation.status = status
-    reservation.updatedAt = new Date()
+  getTablesByStatus(status: TableStatus): Table[] {
+    return this.tables.filter((table) => table.status === status)
+  }
 
-    if (status === "seated") {
-      reservation.seatedAt = new Date()
-      // ጠረጴዛውን occupied ማድረግ
-      if (reservation.tableId) {
-        this.updateTableStatus(reservation.tableId, "occupied", {
-          customerName: reservation.customerName,
-          estimatedDuration: reservation.duration,
-        })
+  updateTableStatus(tableId: string, status: TableStatus): boolean {
+    const table = this.getTableById(tableId)
+    if (table) {
+      table.status = status
+      if (status === "cleaning") {
+        table.lastCleaned = new Date()
       }
-    } else if (status === "completed") {
-      reservation.completedAt = new Date()
-      // ጠረጴዛውን available ማድረግ
-      if (reservation.tableId) {
-        this.updateTableStatus(reservation.tableId, "available")
-      }
-    } else if (status === "cancelled" || status === "no_show") {
-      // ጠረጴዛውን available ማድረግ
-      if (reservation.tableId) {
-        this.updateTableStatus(reservation.tableId, "available")
-      }
+      return true
     }
-
-    return true
+    return false
   }
 
-  // ጠረጴዛ ለቦታ ማስያዝ መመደብ
-  assignTableToReservation(reservationId: string, tableId: string): boolean {
-    const reservation = this.reservations.find((r) => r.id === reservationId)
-    const table = this.tables.find((t) => t.id === tableId)
-
-    if (!reservation || !table) return false
-
-    reservation.tableId = tableId
-    reservation.tableNumber = table.number
-    reservation.updatedAt = new Date()
-
-    return true
+  assignTableToOrder(tableId: string, orderId: string): boolean {
+    const table = this.getTableById(tableId)
+    if (table && table.status === "available") {
+      table.status = "occupied"
+      table.currentOrder = orderId
+      return true
+    }
+    return false
   }
 
-  // ሁሉንም ቦታ ማስያዞች ማግኘት
+  // Reservation Management
   getAllReservations(): Reservation[] {
-    return this.reservations.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-  }
-
-  // በማጣሪያ ቦታ ማስያዞች ማግኘት
-  getFilteredReservations(filter: ReservationFilter): Reservation[] {
-    let filtered = this.reservations
-
-    if (filter.status && filter.status.length > 0) {
-      filtered = filtered.filter((res) => filter.status!.includes(res.status))
-    }
-
-    if (filter.date) {
-      const filterDate = filter.date.toDateString()
-      filtered = filtered.filter((res) => res.reservationDate.toDateString() === filterDate)
-    }
-
-    if (filter.timeSlot) {
-      filtered = filtered.filter((res) => res.reservationTime === filter.timeSlot)
-    }
-
-    if (filter.partySize) {
-      filtered = filtered.filter((res) => res.partySize === filter.partySize)
-    }
-
-    if (filter.customerName) {
-      filtered = filtered.filter((res) => res.customerName.toLowerCase().includes(filter.customerName!.toLowerCase()))
-    }
-
-    return filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-  }
-
-  // በቀን ቦታ ማስያዞች ማግኘት
-  getReservationsByDate(date: Date): Reservation[] {
-    const targetDate = date.toDateString()
-    return this.reservations
-      .filter((res) => res.reservationDate.toDateString() === targetDate)
-      .sort((a, b) => a.reservationTime.localeCompare(b.reservationTime))
-  }
-
-  // ክፍት ጠረጴዛዎች ማግኘት
-  getAvailableTables(partySize: number, date?: Date, time?: string): Table[] {
-    let availableTables = this.tables.filter(
-      (table) => table.isActive && table.status === "available" && table.capacity >= partySize,
+    return this.reservations.sort(
+      (a, b) => new Date(a.reservationDate).getTime() - new Date(b.reservationDate).getTime(),
     )
-
-    // በቀን እና ጊዜ ማጣራት
-    if (date && time) {
-      const reservedTableIds = this.reservations
-        .filter(
-          (res) =>
-            res.reservationDate.toDateString() === date.toDateString() &&
-            res.reservationTime === time &&
-            (res.status === "confirmed" || res.status === "seated"),
-        )
-        .map((res) => res.tableId)
-        .filter(Boolean)
-
-      availableTables = availableTables.filter((table) => !reservedTableIds.includes(table.id))
-    }
-
-    return availableTables.sort((a, b) => a.capacity - b.capacity)
   }
 
-  // የጊዜ ክፍሎች ማግኘት
-  getTimeSlots(date: Date, partySize: number): TimeSlot[] {
-    const timeSlots = [
-      "11:00",
-      "11:30",
-      "12:00",
-      "12:30",
-      "13:00",
-      "13:30",
-      "14:00",
-      "14:30",
-      "17:00",
-      "17:30",
-      "18:00",
-      "18:30",
-      "19:00",
-      "19:30",
-      "20:00",
-      "20:30",
-      "21:00",
-    ]
+  getReservationById(id: string): Reservation | undefined {
+    return this.reservations.find((reservation) => reservation.id === id)
+  }
 
-    return timeSlots.map((time) => {
-      const availableTables = this.getAvailableTables(partySize, date, time)
-      const reservationsAtTime = this.reservations.filter(
-        (res) =>
-          res.reservationDate.toDateString() === date.toDateString() &&
-          res.reservationTime === time &&
-          (res.status === "confirmed" || res.status === "seated"),
-      )
+  getTodayReservations(): Reservation[] {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
 
-      return {
-        time,
-        available: availableTables.length > 0,
-        tablesAvailable: availableTables.length,
-        reservations: reservationsAtTime.length,
-      }
+    return this.reservations.filter((reservation) => {
+      const reservationDate = new Date(reservation.reservationDate)
+      return reservationDate >= today && reservationDate < tomorrow
     })
   }
 
-  // የጠረጴዛ ስታቲስቲክስ
-  getTableStats(dateFrom?: Date, dateTo?: Date): TableStats {
-    const totalTables = this.tables.filter((t) => t.isActive).length
-    const availableTables = this.tables.filter((t) => t.isActive && t.status === "available").length
-    const occupiedTables = this.tables.filter((t) => t.isActive && t.status === "occupied").length
-    const reservedTables = this.tables.filter((t) => t.isActive && t.status === "reserved").length
-
-    let filteredReservations = this.reservations
-    if (dateFrom) {
-      filteredReservations = filteredReservations.filter((res) => res.createdAt >= dateFrom)
-    }
-    if (dateTo) {
-      filteredReservations = filteredReservations.filter((res) => res.createdAt <= dateTo)
+  createReservation(reservationData: Omit<Reservation, "id" | "createdAt">): Reservation {
+    const newReservation: Reservation = {
+      ...reservationData,
+      id: `reservation-${Date.now()}`,
+      createdAt: new Date(),
     }
 
-    const totalReservations = filteredReservations.length
-    const confirmedReservations = filteredReservations.filter(
-      (r) => r.status === "confirmed" || r.status === "seated" || r.status === "completed",
-    ).length
-    const cancelledReservations = filteredReservations.filter((r) => r.status === "cancelled").length
-    const noShowReservations = filteredReservations.filter((r) => r.status === "no_show").length
+    this.reservations.push(newReservation)
 
-    const averageOccupancyRate = totalTables > 0 ? ((occupiedTables + reservedTables) / totalTables) * 100 : 0
+    // Reserve the table if confirmed
+    if (newReservation.status === "confirmed") {
+      this.reserveTable(newReservation.tableId, newReservation.id)
+    }
 
-    // አማካይ የመቀመጫ ጊዜ ስሌት
-    const completedReservations = filteredReservations.filter(
-      (r) => r.status === "completed" && r.seatedAt && r.completedAt,
-    )
-    const averageTurnoverTime =
-      completedReservations.length > 0
-        ? completedReservations.reduce((sum, res) => {
-            const duration = (res.completedAt!.getTime() - res.seatedAt!.getTime()) / (1000 * 60)
-            return sum + duration
-          }, 0) / completedReservations.length
-        : 0
+    return newReservation
+  }
 
-    // በጠረጴዛ ገቢ (ይህ በእውነተኛ አፕሊኬሽን ውስጥ ከትዕዛዝ ስርዓት ይመጣል)
-    const revenueByTable = this.tables
-      .filter((t) => t.isActive)
-      .map((table) => ({
-        tableId: table.id,
-        tableNumber: table.number,
-        revenue: Math.random() * 5000, // ናሙና ዳታ
-        orders: Math.floor(Math.random() * 20),
-      }))
-      .sort((a, b) => b.revenue - a.revenue)
+  updateReservationStatus(reservationId: string, status: ReservationStatus): boolean {
+    const reservation = this.getReservationById(reservationId)
+    if (reservation) {
+      const oldStatus = reservation.status
+      reservation.status = status
+
+      // Handle table status changes
+      if (oldStatus === "confirmed" && status === "cancelled") {
+        this.unreserveTable(reservation.tableId)
+      } else if (status === "seated") {
+        this.updateTableStatus(reservation.tableId, "occupied")
+      } else if (status === "completed") {
+        this.updateTableStatus(reservation.tableId, "cleaning")
+      }
+
+      return true
+    }
+    return false
+  }
+
+  private reserveTable(tableId: string, reservationId: string): boolean {
+    const table = this.getTableById(tableId)
+    if (table) {
+      table.status = "reserved"
+      table.reservedBy = reservationId
+      return true
+    }
+    return false
+  }
+
+  private unreserveTable(tableId: string): boolean {
+    const table = this.getTableById(tableId)
+    if (table && table.status === "reserved") {
+      table.status = "available"
+      table.reservedBy = undefined
+      table.reservedUntil = undefined
+      return true
+    }
+    return false
+  }
+
+  // Availability Checking
+  getAvailableTimeSlots(date: Date, partySize: number): TimeSlot[] {
+    const timeSlots: TimeSlot[] = []
+    const startHour = 17 // 5 PM
+    const endHour = 22 // 10 PM
+
+    for (let hour = startHour; hour <= endHour; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`
+        const availableTables = this.getAvailableTablesForTime(date, time, partySize)
+
+        timeSlots.push({
+          time,
+          available: availableTables.length > 0,
+          tableIds: availableTables.map((table) => table.id),
+        })
+      }
+    }
+
+    return timeSlots
+  }
+
+  private getAvailableTablesForTime(date: Date, time: string, partySize: number): Table[] {
+    return this.tables.filter((table) => {
+      // Check capacity
+      if (table.capacity < partySize) return false
+
+      // Check if table has conflicting reservation
+      const hasConflict = this.reservations.some((reservation) => {
+        if (reservation.tableId !== table.id) return false
+        if (reservation.status === "cancelled") return false
+
+        const reservationDate = new Date(reservation.reservationDate)
+        const isSameDate = reservationDate.toDateString() === date.toDateString()
+
+        if (!isSameDate) return false
+
+        // Check time overlap
+        const reservationStart = this.timeToMinutes(reservation.reservationTime)
+        const reservationEnd = reservationStart + reservation.duration
+        const requestedTime = this.timeToMinutes(time)
+        const requestedEnd = requestedTime + 120 // Default 2 hours
+
+        return requestedTime < reservationEnd && requestedEnd > reservationStart
+      })
+
+      return !hasConflict
+    })
+  }
+
+  private timeToMinutes(time: string): number {
+    const [hours, minutes] = time.split(":").map(Number)
+    return hours * 60 + minutes
+  }
+
+  // Statistics
+  getTableStats(): TableStats {
+    const totalTables = this.tables.length
+    const availableTables = this.getTablesByStatus("available").length
+    const occupiedTables = this.getTablesByStatus("occupied").length
+    const reservedTables = this.getTablesByStatus("reserved").length
+    const cleaningTables = this.getTablesByStatus("cleaning").length
+
+    const occupancyRate = ((occupiedTables + reservedTables) / totalTables) * 100
 
     return {
       totalTables,
       availableTables,
       occupiedTables,
       reservedTables,
-      averageOccupancyRate,
-      averageTurnoverTime,
-      totalReservations,
-      confirmedReservations,
-      cancelledReservations,
-      noShowReservations,
-      revenueByTable,
+      cleaningTables,
+      occupancyRate,
+      averageTurnoverTime: 90, // minutes - this would be calculated from historical data
     }
   }
 
-  // ቦታ ማስያዝ መሰረዝ
-  cancelReservation(reservationId: string, reason?: string): boolean {
-    const reservation = this.reservations.find((r) => r.id === reservationId)
-    if (!reservation) return false
+  // Smart table suggestions
+  suggestBestTable(partySize: number, preferences?: string[]): Table | null {
+    const availableTables = this.getTablesByStatus("available")
+      .filter((table) => table.capacity >= partySize)
+      .sort((a, b) => {
+        // Prefer tables that match party size closely
+        const aDiff = a.capacity - partySize
+        const bDiff = b.capacity - partySize
+        return aDiff - bDiff
+      })
 
-    reservation.status = "cancelled"
-    reservation.updatedAt = new Date()
-    if (reason) {
-      reservation.notes = (reservation.notes || "") + ` | የመሰረዝ ምክንያት: ${reason}`
-    }
-
-    // ጠረጴዛውን available ማድረግ
-    if (reservation.tableId) {
-      this.updateTableStatus(reservation.tableId, "available")
-    }
-
-    return true
-  }
-
-  // ጠረጴዛ ማስተካከል
-  updateTable(tableId: string, updates: Partial<Table>): boolean {
-    const table = this.tables.find((t) => t.id === tableId)
-    if (!table) return false
-
-    Object.assign(table, updates)
-    return true
+    return availableTables[0] || null
   }
 }
 
-export const tableManager = TableManager.getInstance()
+export const tableManager = new TableManager()
