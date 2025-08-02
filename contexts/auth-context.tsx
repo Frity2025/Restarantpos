@@ -10,6 +10,7 @@ export interface Employee {
   role: "admin" | "cashier" | "kitchen" | "waiter"
   permissions: string[]
   isActive: boolean
+  lastLogin?: string
 }
 
 interface AuthContextType {
@@ -18,6 +19,7 @@ interface AuthContextType {
   logout: () => void
   hasPermission: (permission: string) => boolean
   switchRole: (role: Employee["role"]) => void
+  isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -52,26 +54,38 @@ const mockEmployees: Employee[] = [
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [employee, setEmployee] = useState<Employee | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     // Check for stored auth data
     const storedEmployee = localStorage.getItem("employee")
     if (storedEmployee) {
-      setEmployee(JSON.parse(storedEmployee))
-    } else {
-      // Auto-login as admin for demo
-      setEmployee(mockEmployees[0])
-      localStorage.setItem("employee", JSON.stringify(mockEmployees[0]))
+      try {
+        setEmployee(JSON.parse(storedEmployee))
+      } catch (error) {
+        console.error("Error parsing stored employee data:", error)
+        localStorage.removeItem("employee")
+      }
     }
+    setIsLoading(false)
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Mock login logic
+    // Mock login logic with better validation
     const foundEmployee = mockEmployees.find((emp) => emp.email === email)
 
+    // Simulate API call delay
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+
     if (foundEmployee && foundEmployee.isActive) {
-      setEmployee(foundEmployee)
-      localStorage.setItem("employee", JSON.stringify(foundEmployee))
+      // In a real app, you'd validate the password here
+      const employeeWithLastLogin = {
+        ...foundEmployee,
+        lastLogin: new Date().toISOString(),
+      }
+
+      setEmployee(employeeWithLastLogin)
+      localStorage.setItem("employee", JSON.stringify(employeeWithLastLogin))
       return true
     }
 
@@ -81,10 +95,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setEmployee(null)
     localStorage.removeItem("employee")
+    // In a real app, you might want to redirect to login page here
   }
 
   const hasPermission = (permission: string): boolean => {
-    return employee?.permissions.includes(permission) || false
+    if (!employee) return false
+    if (employee.role === "admin") return true
+    return employee.permissions.includes(permission) || false
   }
 
   const switchRole = (role: Employee["role"]) => {
@@ -92,8 +109,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const roleEmployee = mockEmployees.find((emp) => emp.role === role)
     if (roleEmployee) {
-      setEmployee(roleEmployee)
-      localStorage.setItem("employee", JSON.stringify(roleEmployee))
+      const employeeWithLastLogin = {
+        ...roleEmployee,
+        lastLogin: new Date().toISOString(),
+      }
+      setEmployee(employeeWithLastLogin)
+      localStorage.setItem("employee", JSON.stringify(employeeWithLastLogin))
     }
   }
 
@@ -103,6 +124,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     hasPermission,
     switchRole,
+    isLoading,
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-gray-600">እየጫን...</p>
+        </div>
+      </div>
+    )
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

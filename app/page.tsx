@@ -26,22 +26,36 @@ import {
 import { useState } from "react"
 
 export default function HomePage() {
-  const { user } = useAuth()
+  const { employee } = useAuth()
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
 
-  if (!user) {
+  if (!employee) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Welcome to Restaurant POS</h1>
-          <p className="text-muted-foreground">Please log in to continue</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 flex items-center justify-center">
+        <div className="text-center space-y-6 max-w-md mx-auto p-8">
+          <div className="flex items-center justify-center space-x-3 mb-6">
+            <div className="p-3 bg-orange-500 rounded-full">
+              <Utensils className="h-8 w-8 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900">የባህል ምግብ ቤት</h1>
+          </div>
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-gray-800">እንኳን ደህና መጡ</h2>
+            <p className="text-gray-600">ለመቀጠል እባክዎ ይግቡ</p>
+            <Button
+              onClick={() => (window.location.href = "/login")}
+              className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3"
+            >
+              ወደ መግቢያ ገጽ ይሂዱ
+            </Button>
+          </div>
         </div>
       </div>
     )
   }
 
   // Admin Dashboard
-  if (user.role === "admin") {
+  if (employee.role === "admin") {
     return (
       <div className="container mx-auto py-6 space-y-6">
         <div className="flex justify-between items-center">
@@ -148,7 +162,7 @@ export default function HomePage() {
   }
 
   // Kitchen Dashboard
-  if (user.role === "kitchen") {
+  if (employee.role === "kitchen") {
     return (
       <div className="container mx-auto py-6 space-y-6">
         <div className="flex justify-between items-center">
