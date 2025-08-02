@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { Plus, Search, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react"
+import { Plus, Search, AlertTriangle, TrendingUp, TrendingDown, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,12 +21,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { inventoryService } from "@/lib/inventory-management"
+import { autoReorderService } from "@/lib/auto-reorder-service"
 import type { InventoryItem, InventoryCategory, LowStockAlert } from "@/types/inventory"
+import Link from "next/link"
 
 export function InventoryManagement() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
   const [categories, setCategories] = useState<InventoryCategory[]>([])
   const [lowStockAlerts, setLowStockAlerts] = useState<LowStockAlert[]>([])
+  const [reorderAlerts, setReorderAlerts] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [isAddItemOpen, setIsAddItemOpen] = useState(false)
@@ -41,6 +44,7 @@ export function InventoryManagement() {
     setInventoryItems(inventoryService.getAllInventoryItems())
     setCategories(inventoryService.getAllCategories())
     setLowStockAlerts(inventoryService.getLowStockAlerts())
+    setReorderAlerts(autoReorderService.getPendingReorderAlerts())
   }
 
   const filteredItems = inventoryItems.filter((item) => {
@@ -64,6 +68,17 @@ export function InventoryManagement() {
     setSelectedItem(null)
   }
 
+  const handleRunReorderCheck = () => {
+    const newAlerts = autoReorderService.checkInventoryLevels()
+    loadData()
+
+    if (newAlerts.length > 0) {
+      alert(`${newAlerts.length} አዲስ የመሙላት ማሳሰቢያዎች ተፈጥረዋል!`)
+    } else {
+      alert("ምንም አዲስ የመሙላት ማሳሰቢያ አልተገኘም።")
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -72,59 +87,106 @@ export function InventoryManagement() {
           <h1 className="text-3xl font-bold">የእቃ ክምችት አስተዳደር</h1>
           <p className="text-muted-foreground">የምግብ ቤት እቃዎች እና ቁሳቁሶች ክትትል</p>
         </div>
-        <Dialog open={isAddItemOpen} onOpenChange={setIsAddItemOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              አዲስ እቃ ጨምር
+        <div className="flex gap-2">
+          <Button onClick={handleRunReorderCheck} variant="outline">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            መሙላት ፈትሽ
+          </Button>
+          <Link href="/auto-reorder">
+            <Button variant="outline">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              አውቶ መሙላት
             </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>አዲስ እቃ ጨምር</DialogTitle>
-              <DialogDescription>አዲስ የክምችት እቃ ወደ ስርዓቱ ጨምር</DialogDescription>
-            </DialogHeader>
-            <AddItemForm
-              onSuccess={() => {
-                loadData()
-                setIsAddItemOpen(false)
-              }}
-            />
-          </DialogContent>
-        </Dialog>
+          </Link>
+          <Dialog open={isAddItemOpen} onOpenChange={setIsAddItemOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                አዲስ እቃ ጨምር
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>አዲስ እቃ ጨምር</DialogTitle>
+                <DialogDescription>አዲስ የክምችት እቃ ወደ ስርዓቱ ጨምር</DialogDescription>
+              </DialogHeader>
+              <AddItemForm
+                onSuccess={() => {
+                  loadData()
+                  setIsAddItemOpen(false)
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Alerts */}
-      {lowStockAlerts.length > 0 && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardHeader>
-            <CardTitle className="flex items-center text-orange-800">
-              <AlertTriangle className="mr-2 h-5 w-5" />
-              የክምችት ማሳሰቢያዎች ({lowStockAlerts.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {lowStockAlerts.slice(0, 3).map((alert) => (
-                <div key={alert.id} className="flex items-center justify-between p-2 bg-white rounded border">
-                  <div>
-                    <span className="font-medium">{alert.itemName}</span>
-                    <span className="text-sm text-muted-foreground ml-2">
-                      ወቅታዊ: {alert.currentStock} | ዝቅተኛ: {alert.minStockLevel}
-                    </span>
-                  </div>
-                  <Badge variant={alert.severity === "out_of_stock" ? "destructive" : "secondary"}>
-                    {alert.severity === "out_of_stock"
-                      ? "ከክምችት ውጭ"
-                      : alert.severity === "critical"
-                        ? "በጣም ዝቅተኛ"
-                        : "ዝቅተኛ"}
-                  </Badge>
+      {(lowStockAlerts.length > 0 || reorderAlerts.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {lowStockAlerts.length > 0 && (
+            <Card className="border-orange-200 bg-orange-50">
+              <CardHeader>
+                <CardTitle className="flex items-center text-orange-800">
+                  <AlertTriangle className="mr-2 h-5 w-5" />
+                  የክምችት ማሳሰቢያዎች ({lowStockAlerts.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {lowStockAlerts.slice(0, 3).map((alert) => (
+                    <div key={alert.id} className="flex items-center justify-between p-2 bg-white rounded border">
+                      <div>
+                        <span className="font-medium">{alert.itemName}</span>
+                        <span className="text-sm text-muted-foreground ml-2">
+                          ወቅታዊ: {alert.currentStock} | ዝቅተኛ: {alert.minStockLevel}
+                        </span>
+                      </div>
+                      <Badge variant={alert.severity === "out_of_stock" ? "destructive" : "secondary"}>
+                        {alert.severity === "out_of_stock"
+                          ? "ከክምችት ውጭ"
+                          : alert.severity === "critical"
+                            ? "በጣም ዝቅተኛ"
+                            : "ዝቅተኛ"}
+                      </Badge>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          )}
+
+          {reorderAlerts.length > 0 && (
+            <Card className="border-blue-200 bg-blue-50">
+              <CardHeader>
+                <CardTitle className="flex items-center text-blue-800">
+                  <RefreshCw className="mr-2 h-5 w-5" />
+                  የመሙላት ማሳሰቢያዎች ({reorderAlerts.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {reorderAlerts.slice(0, 3).map((alert) => (
+                    <div key={alert.id} className="flex items-center justify-between p-2 bg-white rounded border">
+                      <div>
+                        <span className="font-medium">{alert.itemNameAmharic}</span>
+                        <span className="text-sm text-muted-foreground ml-2">መሙላት: {alert.reorderQuantity}</span>
+                      </div>
+                      <Badge variant={alert.priority === "critical" ? "destructive" : "secondary"}>
+                        {alert.priority === "critical" ? "አስቸኳይ" : alert.priority === "high" ? "ከፍተኛ" : "መካከለኛ"}
+                      </Badge>
+                    </div>
+                  ))}
+                  <Link href="/auto-reorder">
+                    <Button size="sm" className="w-full mt-2">
+                      ሁሉንም ይመልከቱ
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
 
       {/* Filters */}
@@ -271,7 +333,7 @@ function AddItemForm({ onSuccess }: { onSuccess: () => void }) {
 
     if (!category || !supplier) return
 
-    inventoryService.addInventoryItem({
+    const newItem = inventoryService.addInventoryItem({
       name: formData.name,
       nameAmharic: formData.nameAmharic,
       category,
@@ -286,6 +348,21 @@ function AddItemForm({ onSuccess }: { onSuccess: () => void }) {
       location: formData.location,
       description: formData.description,
       isActive: true,
+    })
+
+    // Create automatic reorder rule for new item
+    autoReorderService.createReorderRule({
+      inventoryItemId: newItem.id,
+      itemName: newItem.name,
+      itemNameAmharic: newItem.nameAmharic,
+      reorderPoint: Math.max(formData.minStockLevel, Math.floor(formData.currentStock * 0.3)),
+      reorderQuantity: Math.floor((formData.maxStockLevel - formData.minStockLevel) * 0.8),
+      maxStockLevel: formData.maxStockLevel,
+      preferredSupplierId: formData.supplierId,
+      preferredSupplierName: supplier.name,
+      isActive: true,
+      autoOrder: false, // Default to manual approval
+      leadTimeDays: 7, // Default lead time
     })
 
     onSuccess()
