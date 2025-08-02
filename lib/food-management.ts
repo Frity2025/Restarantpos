@@ -316,3 +316,29 @@ export function searchFoods(query: string): FoodItem[] {
       item.tags.some((tag) => tag.toLowerCase().includes(lowercaseQuery)),
   )
 }
+
+// Legacy food manager for backward compatibility
+export const foodManager = {
+  addFood: (foodData: any) => {
+    const newFood: FoodItem = {
+      id: Date.now().toString(),
+      name: foodData.title,
+      nameEn: foodData.title,
+      description: foodData.description || "",
+      price: foodData.price,
+      category: foodData.category,
+      image: foodData.image,
+      available: foodData.available ?? true,
+      preparationTime: foodData.preparationTime || 15,
+      ingredients: foodData.ingredients || [],
+      allergens: [],
+      spicyLevel: foodData.spicyLevel || 0,
+      isVegetarian: foodData.type === "VEG" || foodData.type === "VEGAN",
+      isVegan: foodData.type === "VEGAN",
+      isGlutenFree: false,
+      tags: [],
+    }
+    foodItems.push(newFood)
+    return newFood
+  },
+}

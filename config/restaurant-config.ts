@@ -36,6 +36,49 @@ export interface RestaurantConfig {
   }
 }
 
+export const foodCategories = [
+  {
+    id: "appetizers",
+    name: "ቅድመ ምግብ",
+    nameEn: "Appetizers",
+    description: "የምግብ ቅድመ ዝግጅት",
+    icon: "🥗",
+    order: 1,
+  },
+  {
+    id: "main-dishes",
+    name: "ዋና ምግቦች",
+    nameEn: "Main Dishes",
+    description: "ዋና የምግብ ዓይነቶች",
+    icon: "🍽️",
+    order: 2,
+  },
+  {
+    id: "traditional",
+    name: "ባህላዊ ምግቦች",
+    nameEn: "Traditional Foods",
+    description: "የኢትዮጵያ ባህላዊ ምግቦች",
+    icon: "🇪🇹",
+    order: 3,
+  },
+  {
+    id: "beverages",
+    name: "መጠጦች",
+    nameEn: "Beverages",
+    description: "ሙቅ እና ቀዝቃዛ መጠጦች",
+    icon: "🥤",
+    order: 4,
+  },
+  {
+    id: "desserts",
+    name: "ጣፋጭ ምግቦች",
+    nameEn: "Desserts",
+    description: "ጣፋጭ የመጨረሻ ምግቦች",
+    icon: "🍰",
+    order: 5,
+  },
+]
+
 export const restaurantConfig: RestaurantConfig = {
   name: "የባህል ምግብ ቤት",
   nameEn: "Cultural Restaurant",
