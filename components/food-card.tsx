@@ -1,89 +1,129 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState } from "react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Clock } from "lucide-react"
+import { Plus, Clock, Flame } from "lucide-react"
 import { useCart } from "@/contexts/cart-context"
-import type { FoodItem } from "@/lib/food-management"
+import { toast } from "@/hooks/use-toast"
+import type { Food } from "@/types/order"
 
 interface FoodCardProps {
-  food: FoodItem
+  food: Food
 }
 
 export function FoodCard({ food }: FoodCardProps) {
-  const { addItem } = useCart()
+  const { addToCart } = useCart()
+  const [isAdding, setIsAdding] = useState(false)
 
-  const handleAddToCart = () => {
-    addItem({
-      id: food.id,
-      name: food.name,
-      price: food.price,
-      quantity: 1,
-      image: food.image,
-    })
+  const handleAddToCart = async () => {
+    setIsAdding(true)
+
+    try {
+      addToCart({
+        id: food.id,
+        name: food.name,
+        nameAmharic: food.nameAmharic,
+        price: food.price,
+        quantity: 1,
+        image: food.image,
+        category: food.category,
+        barcode: food.barcode,
+      })
+
+      toast({
+        title: "Added to Cart",
+        description: `${food.nameAmharic} has been added to your cart`,
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add item to cart",
+        variant: "destructive",
+      })
+    } finally {
+      setIsAdding(false)
+    }
   }
 
-  const getSpicyLevelDisplay = (level: number) => {
-    if (level === 0) return null
-    return "🌶️".repeat(level)
+  const getSpiceIcon = (level?: string) => {
+    switch (level) {
+      case "hot":
+        return "🌶️🌶️🌶️"
+      case "medium":
+        return "🌶️🌶️"
+      case "mild":
+      default:
+        return "🌶️"
+    }
   }
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-      <div className="aspect-video bg-gray-100 relative">
-        {food.image ? (
-          <img src={food.image || "/placeholder.svg"} alt={food.name} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="text-4xl">🍽️</span>
-          </div>
-        )}
-        {food.spicyLevel > 0 && (
-          <Badge className="absolute top-2 right-2 bg-red-100 text-red-800">
-            {getSpicyLevelDisplay(food.spicyLevel)}
-          </Badge>
-        )}
-      </div>
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-lg">{food.name}</CardTitle>
-            <p className="text-sm text-gray-500">{food.nameEn}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xl font-bold text-green-600">{food.price} ብር</p>
-          </div>
+    <Card className="group hover:shadow-lg transition-shadow duration-200">
+      <CardContent className="p-4">
+        <div className="aspect-square mb-3 bg-gray-100 rounded-lg overflow-hidden">
+          <img
+            src={food.image || "/placeholder.svg"}
+            alt={food.nameAmharic}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+          />
         </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        {food.description && <p className="text-sm text-gray-600 mb-3 line-clamp-2">{food.description}</p>}
 
-        <div className="flex items-center justify-between mb-3">
-          {food.preparationTime && (
-            <div className="flex items-center text-sm text-gray-500">
-              <Clock className="h-3 w-3 mr-1" />
-              {food.preparationTime} ደቂቃ
-            </div>
+        <div className="space-y-2">
+          <div>
+            <h3 className="font-semibold text-lg leading-tight">{food.nameAmharic}</h3>
+            <p className="text-sm text-muted-foreground">{food.name}</p>
+          </div>
+
+          {food.description && (
+            <p className="text-xs text-muted-foreground line-clamp-2">{food.descriptionAmharic || food.description}</p>
           )}
-          <div className="flex gap-1">
-            {food.isVegetarian && (
-              <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
-                ቬጀቴሪያን
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {food.preparationTime && (
+              <Badge variant="outline" className="text-xs">
+                <Clock className="w-3 h-3 mr-1" />
+                {food.preparationTime}m
               </Badge>
             )}
-            {food.isVegan && (
-              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                ቪጋን
+
+            {food.spiceLevel && food.spiceLevel !== "mild" && (
+              <Badge variant="outline" className="text-xs">
+                <Flame className="w-3 h-3 mr-1" />
+                {getSpiceIcon(food.spiceLevel)}
+              </Badge>
+            )}
+
+            {food.isVegetarian && (
+              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                🌱 Veg
               </Badge>
             )}
           </div>
-        </div>
 
-        <Button onClick={handleAddToCart} className="w-full" size="sm">
-          <Plus className="h-4 w-4 mr-1" />
-          ወደ ጋሪ ጨምር
-        </Button>
+          {food.barcode && <div className="text-xs text-muted-foreground font-mono">#{food.barcode}</div>}
+
+          <div className="flex items-center justify-between pt-2">
+            <span className="text-xl font-bold text-primary">{food.price} ብር</span>
+
+            <Button
+              onClick={handleAddToCart}
+              disabled={!food.isAvailable || isAdding}
+              size="sm"
+              className="min-w-[80px]"
+            >
+              {isAdding ? (
+                "Adding..."
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   )

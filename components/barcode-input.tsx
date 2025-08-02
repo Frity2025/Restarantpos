@@ -13,6 +13,7 @@ interface BarcodeInputProps {
   label?: string
   placeholder?: string
   disabled?: boolean
+  className?: string
 }
 
 export function BarcodeInput({
@@ -21,9 +22,9 @@ export function BarcodeInput({
   label = "Barcode",
   placeholder = "Enter or scan barcode",
   disabled = false,
+  className = "",
 }: BarcodeInputProps) {
   const [isScannerOpen, setIsScannerOpen] = useState(false)
-  const [inputMode, setInputMode] = useState<"manual" | "scan">("manual")
 
   const handleScan = (barcode: string) => {
     onChange(barcode)
@@ -31,39 +32,34 @@ export function BarcodeInput({
   }
 
   return (
-    <div className="space-y-2">
-      {label && <Label>{label}</Label>}
-
+    <div className={className}>
+      {label && <Label htmlFor="barcode-input">{label}</Label>}
       <div className="flex gap-2">
-        <div className="flex-1">
-          <Input
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            disabled={disabled}
-            className="font-mono"
-          />
-        </div>
-
+        <Input
+          id="barcode-input"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          disabled={disabled}
+          className="font-mono"
+        />
         <Button
           type="button"
           variant="outline"
           size="icon"
           onClick={() => setIsScannerOpen(true)}
           disabled={disabled}
-          title="Scan barcode with camera"
+          className="bg-transparent"
         >
           <Camera className="h-4 w-4" />
         </Button>
       </div>
 
-      {value && <div className="text-xs text-muted-foreground font-mono">Barcode: {value}</div>}
-
       <BarcodeScannerModal
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
         onScan={handleScan}
-        title="Scan Product Barcode"
+        title="Scan Barcode"
       />
     </div>
   )

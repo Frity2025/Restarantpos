@@ -1,206 +1,68 @@
-export interface FoodItem {
-  id: string
-  name: string
-  nameEn: string
-  description: string
-  price: number
-  category: string
-  image?: string
-  available: boolean
-  preparationTime: number
-  ingredients: string[]
-  allergens: string[]
-  nutritionalInfo?: {
-    calories: number
-    protein: number
-    carbs: number
-    fat: number
-  }
-  spicyLevel: number
-  isVegetarian: boolean
-  isVegan: boolean
-  isGlutenFree: boolean
-  tags: string[]
-}
+import type { Food } from "@/types/order"
 
-export interface Category {
-  id: string
-  name: string
-  nameEn: string
-  description: string
-  icon: string
-  order: number
-}
-
-export const categories: Category[] = [
-  {
-    id: "appetizers",
-    name: "ቅድመ ምግብ",
-    nameEn: "Appetizers",
-    description: "የምግብ ቅድመ ዝግጅት",
-    icon: "🥗",
-    order: 1,
-  },
-  {
-    id: "main-dishes",
-    name: "ዋና ምግቦች",
-    nameEn: "Main Dishes",
-    description: "ዋና የምግብ ዓይነቶች",
-    icon: "🍽️",
-    order: 2,
-  },
-  {
-    id: "traditional",
-    name: "ባህላዊ ምግቦች",
-    nameEn: "Traditional Foods",
-    description: "የኢትዮጵያ ባህላዊ ምግቦች",
-    icon: "🇪🇹",
-    order: 3,
-  },
-  {
-    id: "beverages",
-    name: "መጠጦች",
-    nameEn: "Beverages",
-    description: "ሙቅ እና ቀዝቃዛ መጠጦች",
-    icon: "🥤",
-    order: 4,
-  },
-  {
-    id: "desserts",
-    name: "ጣፋጭ ምግቦች",
-    nameEn: "Desserts",
-    description: "ጣፋጭ የመጨረሻ ምግቦች",
-    icon: "🍰",
-    order: 5,
-  },
-]
-
-export const foodItems: FoodItem[] = [
+// Sample food data with barcodes for testing
+export const sampleFoods: Food[] = [
   {
     id: "1",
-    name: "ዶሮ ወጥ",
-    nameEn: "Doro Wot",
-    description: "የኢትዮጵያ ባህላዊ የዶሮ ወጥ በቤርቤሬ ቅመም",
+    name: "Doro Wot",
+    nameAmharic: "ዶሮ ወጥ",
+    description: "Traditional Ethiopian chicken stew with berbere spice",
+    descriptionAmharic: "የኢትዮጵያ ባህላዊ የዶሮ ወጥ በቤርቤሬ ቅመም",
     price: 350,
-    category: "traditional",
-    available: true,
+    category: "main-dishes",
+    image: "/placeholder.svg?height=200&width=200&text=ዶሮ+ወጥ",
     preparationTime: 45,
-    ingredients: ["ዶሮ", "ቤርቤሬ", "ሽንኩርት", "ነጭ ሽንኩርት", "ዘይት", "እንቁላል"],
-    allergens: ["እንቁላል"],
+    spiceLevel: "hot",
+    isVegetarian: false,
+    isAvailable: true,
+    barcode: "0210000001234",
+    ingredients: ["chicken", "berbere", "onions", "garlic", "oil", "eggs"],
+    allergens: ["eggs"],
     nutritionalInfo: {
       calories: 450,
       protein: 35,
       carbs: 15,
       fat: 28,
     },
-    spicyLevel: 4,
-    isVegetarian: false,
-    isVegan: false,
-    isGlutenFree: true,
-    tags: ["ባህላዊ", "ዋና ምግብ", "ዶሮ"],
   },
   {
     id: "2",
-    name: "ክትፎ",
-    nameEn: "Kitfo",
-    description: "የተፈጨ ጥሬ ስጋ በሚጣ ሚጣ እና ቅቤ",
-    price: 280,
-    category: "traditional",
-    available: true,
+    name: "Injera",
+    nameAmharic: "እንጀራ",
+    description: "Traditional Ethiopian sourdough flatbread",
+    descriptionAmharic: "የኢትዮጵያ ባህላዊ እንጀራ",
+    price: 25,
+    category: "sides",
+    image: "/placeholder.svg?height=200&width=200&text=እንጀራ",
     preparationTime: 15,
-    ingredients: ["ስጋ", "ሚጣ ሚጣ", "ቅቤ", "አይብ"],
-    allergens: ["ወተት"],
+    spiceLevel: "mild",
+    isVegetarian: true,
+    isAvailable: true,
+    barcode: "0520000002345",
+    ingredients: ["teff flour", "water"],
+    allergens: [],
     nutritionalInfo: {
-      calories: 380,
-      protein: 28,
-      carbs: 5,
-      fat: 28,
+      calories: 180,
+      protein: 6,
+      carbs: 36,
+      fat: 1,
     },
-    spicyLevel: 3,
-    isVegetarian: false,
-    isVegan: false,
-    isGlutenFree: true,
-    tags: ["ባህላዊ", "ጥሬ", "ስጋ"],
   },
   {
     id: "3",
-    name: "ሸክላ ዱባ",
-    nameEn: "Shekla Duba",
-    description: "የተጠበሰ ዱባ በሽንኩርት እና ቅመማ ቅመም",
-    price: 180,
-    category: "traditional",
-    available: true,
-    preparationTime: 25,
-    ingredients: ["ዱባ", "ሽንኩርት", "ነጭ ሽንኩርት", "ዘይት", "ቅመማ ቅመም"],
-    allergens: [],
-    nutritionalInfo: {
-      calories: 220,
-      protein: 8,
-      carbs: 35,
-      fat: 8,
-    },
-    spicyLevel: 2,
-    isVegetarian: true,
-    isVegan: true,
-    isGlutenFree: true,
-    tags: ["ባህላዊ", "ቬጀቴሪያን", "ዱባ"],
-  },
-  {
-    id: "4",
-    name: "ፓስታ",
-    nameEn: "Pasta",
-    description: "የጣሊያን ፓስታ በቲማቲም ሶስ",
-    price: 150,
-    category: "main-dishes",
-    available: true,
-    preparationTime: 20,
-    ingredients: ["ፓስታ", "ቲማቲም", "ሽንኩርት", "ነጭ ሽንኩርት", "ዘይት"],
-    allergens: ["ግሉተን"],
-    nutritionalInfo: {
-      calories: 320,
-      protein: 12,
-      carbs: 58,
-      fat: 6,
-    },
-    spicyLevel: 1,
-    isVegetarian: true,
-    isVegan: true,
-    isGlutenFree: false,
-    tags: ["ፓስታ", "ቬጀቴሪያን"],
-  },
-  {
-    id: "5",
-    name: "ሻይ",
-    nameEn: "Tea",
-    description: "ባህላዊ የኢትዮጵያ ሻይ",
-    price: 25,
+    name: "Ethiopian Coffee",
+    nameAmharic: "የኢትዮጵያ ቡና",
+    description: "Traditional Ethiopian coffee ceremony",
+    descriptionAmharic: "የኢትዮጵያ ባህላዊ ቡና",
+    price: 45,
     category: "beverages",
-    available: true,
-    preparationTime: 5,
-    ingredients: ["ሻይ", "ስኳር", "ወተት"],
-    allergens: ["ወተት"],
-    nutritionalInfo: {
-      calories: 80,
-      protein: 2,
-      carbs: 18,
-      fat: 1,
-    },
-    spicyLevel: 0,
-    isVegetarian: true,
-    isVegan: false,
-    isGlutenFree: true,
-    tags: ["መጠጥ", "ሙቅ"],
-  },
-  {
-    id: "6",
-    name: "ቡና",
-    nameEn: "Coffee",
-    description: "የኢትዮጵያ ባህላዊ ቡና",
-    price: 30,
-    category: "beverages",
-    available: true,
+    image: "/placeholder.svg?height=200&width=200&text=ቡና",
     preparationTime: 10,
-    ingredients: ["የቡና ፍሬ", "ስኳር"],
+    spiceLevel: "mild",
+    isVegetarian: true,
+    isAvailable: true,
+    barcode: "0430000003456",
+    ingredients: ["coffee beans", "sugar"],
     allergens: [],
     nutritionalInfo: {
       calories: 50,
@@ -208,137 +70,211 @@ export const foodItems: FoodItem[] = [
       carbs: 12,
       fat: 0,
     },
-    spicyLevel: 0,
-    isVegetarian: true,
-    isVegan: true,
-    isGlutenFree: true,
-    tags: ["መጠጥ", "ሙቅ", "ካፌይን"],
   },
   {
-    id: "7",
-    name: "ሳላጣ",
-    nameEn: "Salad",
-    description: "ትኩስ የአትክልት ሳላጣ",
+    id: "4",
+    name: "Tibs",
+    nameAmharic: "ጥብስ",
+    description: "Sautéed meat with vegetables and spices",
+    descriptionAmharic: "በቅመማ ቅመም የተቀመመ ጥብስ",
+    price: 280,
+    category: "main-dishes",
+    image: "/placeholder.svg?height=200&width=200&text=ጥብስ",
+    preparationTime: 25,
+    spiceLevel: "medium",
+    isVegetarian: false,
+    isAvailable: true,
+    barcode: "0240000004567",
+    ingredients: ["beef", "onions", "peppers", "tomatoes", "spices"],
+    allergens: [],
+    nutritionalInfo: {
+      calories: 380,
+      protein: 28,
+      carbs: 12,
+      fat: 25,
+    },
+  },
+  {
+    id: "5",
+    name: "Honey Wine",
+    nameAmharic: "ጠጅ",
+    description: "Traditional Ethiopian honey wine",
+    descriptionAmharic: "የኢትዮጵያ ባህላዊ ጠጅ",
     price: 120,
-    category: "appetizers",
-    available: true,
-    preparationTime: 10,
-    ingredients: ["ሰላጣ", "ቲማቲም", "ሽንኩርት", "ካሮት", "ዘይት", "ሎሚ"],
+    category: "beverages",
+    image: "/placeholder.svg?height=200&width=200&text=ጠጅ",
+    preparationTime: 5,
+    spiceLevel: "mild",
+    isVegetarian: true,
+    isAvailable: true,
+    barcode: "0450000005678",
+    ingredients: ["honey", "water", "hops"],
     allergens: [],
     nutritionalInfo: {
       calories: 150,
-      protein: 4,
-      carbs: 12,
-      fat: 10,
+      protein: 0,
+      carbs: 15,
+      fat: 0,
     },
-    spicyLevel: 0,
+  },
+  {
+    id: "6",
+    name: "Vegetarian Combo",
+    nameAmharic: "የቬጀቴሪያን ጥምር",
+    description: "Assorted vegetarian dishes",
+    descriptionAmharic: "የተለያዩ የቬጀቴሪያን ምግቦች",
+    price: 220,
+    category: "main-dishes",
+    image: "/placeholder.svg?height=200&width=200&text=ቬጀቴሪያን",
+    preparationTime: 30,
+    spiceLevel: "medium",
     isVegetarian: true,
-    isVegan: true,
-    isGlutenFree: true,
-    tags: ["ሳላጣ", "ቬጀቴሪያን", "ጤናማ"],
+    isAvailable: true,
+    barcode: "0260000006789",
+    ingredients: ["lentils", "cabbage", "carrots", "potatoes", "spices"],
+    allergens: [],
+    nutritionalInfo: {
+      calories: 320,
+      protein: 18,
+      carbs: 45,
+      fat: 8,
+    },
+  },
+  {
+    id: "7",
+    name: "Baklava",
+    nameAmharic: "ባክላቫ",
+    description: "Sweet pastry with nuts and honey",
+    descriptionAmharic: "በማር እና ለውዝ የተሰራ ጣፋጭ",
+    price: 85,
+    category: "desserts",
+    image: "/placeholder.svg?height=200&width=200&text=ባክላቫ",
+    preparationTime: 15,
+    spiceLevel: "mild",
+    isVegetarian: true,
+    isAvailable: true,
+    barcode: "0370000007890",
+    ingredients: ["phyllo dough", "nuts", "honey", "butter"],
+    allergens: ["nuts", "gluten"],
+    nutritionalInfo: {
+      calories: 280,
+      protein: 6,
+      carbs: 35,
+      fat: 14,
+    },
   },
   {
     id: "8",
-    name: "ቲራሚሱ",
-    nameEn: "Tiramisu",
-    description: "የጣሊያን ባህላዊ ጣፋጭ ምግብ",
-    price: 180,
-    category: "desserts",
-    available: true,
-    preparationTime: 15,
-    ingredients: ["ማስካርፖኔ", "እንቁላል", "ስኳር", "ቡና", "ኮኮዋ"],
-    allergens: ["እንቁላል", "ወተት", "ግሉተን"],
-    nutritionalInfo: {
-      calories: 320,
-      protein: 8,
-      carbs: 28,
-      fat: 20,
-    },
-    spicyLevel: 0,
+    name: "Fresh Juice",
+    nameAmharic: "ትኩስ ጭማቂ",
+    description: "Freshly squeezed fruit juice",
+    descriptionAmharic: "ትኩስ የፍራፍሬ ጭማቂ",
+    price: 35,
+    category: "beverages",
+    image: "/placeholder.svg?height=200&width=200&text=ጭማቂ",
+    preparationTime: 5,
+    spiceLevel: "mild",
     isVegetarian: true,
-    isVegan: false,
-    isGlutenFree: false,
-    tags: ["ጣፋጭ", "ቡና", "ክሬም"],
+    isAvailable: true,
+    barcode: "0480000008901",
+    ingredients: ["fresh fruits", "water"],
+    allergens: [],
+    nutritionalInfo: {
+      calories: 120,
+      protein: 1,
+      carbs: 30,
+      fat: 0,
+    },
   },
 ]
 
-// Food management functions
-export function addFoodItem(foodData: Omit<FoodItem, "id">): FoodItem {
-  const newFood: FoodItem = {
-    ...foodData,
-    id: Date.now().toString(),
-  }
-  foodItems.push(newFood)
-  return newFood
-}
+class FoodService {
+  private foods: Food[] = [...sampleFoods]
 
-export function updateFoodItem(id: string, foodData: Omit<FoodItem, "id">): FoodItem {
-  const index = foodItems.findIndex((item) => item.id === id)
-  if (index === -1) {
-    throw new Error("Food item not found")
+  getAllFoods(): Food[] {
+    return this.foods
   }
 
-  const updatedFood: FoodItem = {
-    ...foodData,
-    id,
+  getFoodById(id: string): Food | undefined {
+    return this.foods.find((food) => food.id === id)
   }
-  foodItems[index] = updatedFood
-  return updatedFood
-}
 
-export function deleteFoodItem(id: string): void {
-  const index = foodItems.findIndex((item) => item.id === id)
-  if (index === -1) {
-    throw new Error("Food item not found")
+  getFoodByBarcode(barcode: string): Food | undefined {
+    return this.foods.find((food) => food.barcode === barcode)
   }
-  foodItems.splice(index, 1)
-}
 
-export function getFoodItem(id: string): FoodItem | undefined {
-  return foodItems.find((item) => item.id === id)
-}
+  getFoodsByCategory(category: string): Food[] {
+    if (category === "all") return this.foods
+    return this.foods.filter((food) => food.category === category)
+  }
 
-export function getFoodsByCategory(categoryId: string): FoodItem[] {
-  return foodItems.filter((item) => item.category === categoryId)
-}
+  getAvailableFoods(): Food[] {
+    return this.foods.filter((food) => food.isAvailable)
+  }
 
-export function getAvailableFoods(): FoodItem[] {
-  return foodItems.filter((item) => item.available)
-}
+  searchFoods(query: string): Food[] {
+    const lowercaseQuery = query.toLowerCase()
+    return this.foods.filter(
+      (food) =>
+        food.name.toLowerCase().includes(lowercaseQuery) ||
+        food.nameAmharic.toLowerCase().includes(lowercaseQuery) ||
+        food.description?.toLowerCase().includes(lowercaseQuery) ||
+        food.descriptionAmharic?.toLowerCase().includes(lowercaseQuery) ||
+        food.barcode?.includes(query),
+    )
+  }
 
-export function searchFoods(query: string): FoodItem[] {
-  const lowercaseQuery = query.toLowerCase()
-  return foodItems.filter(
-    (item) =>
-      item.name.toLowerCase().includes(lowercaseQuery) ||
-      item.nameEn.toLowerCase().includes(lowercaseQuery) ||
-      item.description.toLowerCase().includes(lowercaseQuery) ||
-      item.tags.some((tag) => tag.toLowerCase().includes(lowercaseQuery)),
-  )
-}
-
-// Legacy food manager for backward compatibility
-export const foodManager = {
-  addFood: (foodData: any) => {
-    const newFood: FoodItem = {
-      id: Date.now().toString(),
-      name: foodData.title,
-      nameEn: foodData.title,
-      description: foodData.description || "",
-      price: foodData.price,
-      category: foodData.category,
-      image: foodData.image,
-      available: foodData.available ?? true,
-      preparationTime: foodData.preparationTime || 15,
-      ingredients: foodData.ingredients || [],
-      allergens: [],
-      spicyLevel: foodData.spicyLevel || 0,
-      isVegetarian: foodData.type === "VEG" || foodData.type === "VEGAN",
-      isVegan: foodData.type === "VEGAN",
-      isGlutenFree: false,
-      tags: [],
+  addFood(food: Omit<Food, "id">): boolean {
+    try {
+      const newFood: Food = {
+        ...food,
+        id: Date.now().toString(),
+      }
+      this.foods.push(newFood)
+      return true
+    } catch (error) {
+      console.error("Failed to add food:", error)
+      return false
     }
-    foodItems.push(newFood)
-    return newFood
-  },
+  }
+
+  updateFood(id: string, updates: Partial<Food>): boolean {
+    try {
+      const index = this.foods.findIndex((food) => food.id === id)
+      if (index === -1) return false
+
+      this.foods[index] = { ...this.foods[index], ...updates }
+      return true
+    } catch (error) {
+      console.error("Failed to update food:", error)
+      return false
+    }
+  }
+
+  deleteFood(id: string): boolean {
+    try {
+      const index = this.foods.findIndex((food) => food.id === id)
+      if (index === -1) return false
+
+      this.foods.splice(index, 1)
+      return true
+    } catch (error) {
+      console.error("Failed to delete food:", error)
+      return false
+    }
+  }
+
+  toggleAvailability(id: string): boolean {
+    try {
+      const food = this.getFoodById(id)
+      if (!food) return false
+
+      return this.updateFood(id, { isAvailable: !food.isAvailable })
+    } catch (error) {
+      console.error("Failed to toggle availability:", error)
+      return false
+    }
+  }
 }
+
+export const foodService = new FoodService()
