@@ -1,43 +1,17 @@
 "use client"
 
+import { Moon, Sun } from "lucide-react"
+import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
-import { restaurantThemes } from "@/lib/theme-utils"
-import { useState } from "react"
 
 export function ThemeSwitcher() {
-  const [currentTheme, setCurrentTheme] = useState("default")
-
-  const handleThemeChange = (themeName: string) => {
-    setCurrentTheme(themeName)
-    // በተግባር ላይ ሲውል ቴማውን ይቀይራል
-    // updateThemeColors(restaurantThemes[themeName].primary, restaurantThemes[themeName].secondary)
-  }
+  const { theme, setTheme } = useTheme()
 
   return (
-    <div className="p-4 border-t">
-      <h3 className="font-medium mb-2">ቴማ ይምረጡ</h3>
-      <div className="flex flex-wrap gap-2">
-        {Object.keys(restaurantThemes).map((theme) => (
-          <Button
-            key={theme}
-            variant={currentTheme === theme ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleThemeChange(theme)}
-          >
-            {theme === "default"
-              ? "መደበኛ"
-              : theme === "ethiopian"
-                ? "ኢትዮጵያዊ"
-                : theme === "italian"
-                  ? "ጣሊያናዊ"
-                  : theme === "asian"
-                    ? "እስያዊ"
-                    : theme === "mexican"
-                      ? "ሜክሲካዊ"
-                      : theme}
-          </Button>
-        ))}
-      </div>
-    </div>
+    <Button variant="ghost" size="sm" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+      <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+      <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      <span className="sr-only">Toggle theme</span>
+    </Button>
   )
 }

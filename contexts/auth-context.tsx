@@ -1,56 +1,81 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { authenticateUser, hasPermission as checkPermission } from "@/lib/auth"
+import type React from "react"
+import { createContext, useContext, useState, useEffect } from "react"
 
-interface Employee {
+export interface Employee {
   id: string
   name: string
-  role: string
+  email: string
+  role: "admin" | "cashier" | "kitchen" | "waiter"
   permissions: string[]
+  isActive: boolean
 }
 
 interface AuthContextType {
   employee: Employee | null
-  login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>
+  login: (email: string, password: string) => Promise<boolean>
   logout: () => void
-  isLoading: boolean
   hasPermission: (permission: string) => boolean
+  switchRole: (role: Employee["role"]) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+// Mock employees data
+const mockEmployees: Employee[] = [
+  {
+    id: "1",
+    name: "አህመድ አሊ",
+    email: "admin@restaurant.com",
+    role: "admin",
+    permissions: ["admin_access", "pos_view", "pos_create", "view_orders", "kitchen_access", "view_analytics"],
+    isActive: true,
+  },
+  {
+    id: "2",
+    name: "ፋጢማ መሀመድ",
+    email: "cashier@restaurant.com",
+    role: "cashier",
+    permissions: ["pos_view", "pos_create", "view_orders"],
+    isActive: true,
+  },
+  {
+    id: "3",
+    name: "ዳዊት ተስፋዬ",
+    email: "kitchen@restaurant.com",
+    role: "kitchen",
+    permissions: ["kitchen_access", "view_orders"],
+    isActive: true,
+  },
+]
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [employee, setEmployee] = useState<Employee | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check for saved session
-    const savedEmployee = localStorage.getItem("employee")
-    if (savedEmployee) {
-      try {
-        setEmployee(JSON.parse(savedEmployee))
-      } catch (error) {
-        console.error("Error parsing saved employee:", error)
-        localStorage.removeItem("employee")
-      }
+    // Check for stored auth data
+    const storedEmployee = localStorage.getItem("employee")
+    if (storedEmployee) {
+      setEmployee(JSON.parse(storedEmployee))
+    } else {
+      // Auto-login as admin for demo
+      setEmployee(mockEmployees[0])
+      localStorage.setItem("employee", JSON.stringify(mockEmployees[0]))
     }
-    setIsLoading(false)
   }, [])
 
-  const login = async (username: string, password: string) => {
-    setIsLoading(true)
-    try {
-      const result = await authenticateUser(username, password)
-      if (result.success && result.employee) {
-        setEmployee(result.employee)
-        localStorage.setItem("employee", JSON.stringify(result.employee))
-        return { success: true }
-      }
-      return { success: false, error: result.error }
-    } finally {
-      setIsLoading(false)
+  const login = async (email: string, password: string): Promise<boolean> => {
+    // Mock login logic
+    const foundEmployee = mockEmployees.find((emp) => emp.email === email)
+
+    if (foundEmployee && foundEmployee.isActive) {
+      setEmployee(foundEmployee)
+      localStorage.setItem("employee", JSON.stringify(foundEmployee))
+      return true
     }
+
+    return false
   }
 
   const logout = () => {
@@ -59,19 +84,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const hasPermission = (permission: string): boolean => {
-    return checkPermission(employee, permission)
+    return employee?.permissions.includes(permission) || false
   }
 
-  return (
-    <AuthContext.Provider value={{ employee, login, logout, isLoading, hasPermission }}>
-      {children}
-    </AuthContext.Provider>
-  )
+  const switchRole = (role: Employee["role"]) => {
+    if (!employee) return
+
+    const roleEmployee = mockEmployees.find((emp) => emp.role === role)
+    if (roleEmployee) {
+      setEmployee(roleEmployee)
+      localStorage.setItem("employee", JSON.stringify(roleEmployee))
+    }
+  }
+
+  const value: AuthContextType = {
+    employee,
+    login,
+    logout,
+    hasPermission,
+    switchRole,
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (!context) {
+  if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider")
   }
   return context
