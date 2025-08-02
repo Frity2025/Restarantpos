@@ -1,86 +1,66 @@
-// የትዕዛዝ ሁኔታዎች
-export type OrderStatus =
-  | "pending" // በመጠባበቅ ላይ
-  | "confirmed" // ተረጋግጧል
-  | "preparing" // በዝግጅት ላይ
-  | "ready" // ዝግጁ ነው
-  | "served" // ተሰርቷል
-  | "completed" // ተጠናቋል
-  | "cancelled" // ተሰርዟል
-
-// የክፍያ ሁኔታዎች
-export type PaymentStatus = "pending" | "paid" | "partial" | "refunded"
-
-// የትዕዛዝ አይነቶች
-export type OrderType = "dine_in" | "takeaway" | "delivery"
-
-// የትዕዛዝ ንጥል
-export interface OrderItem {
+export interface Food {
   id: string
-  foodId: string
-  foodName: string
-  foodImage: string
+  name: string
+  nameAmharic: string
+  description?: string
+  descriptionAmharic?: string
+  price: number
+  category: string
+  image: string
+  preparationTime?: number
+  spiceLevel?: "mild" | "medium" | "hot"
+  isVegetarian?: boolean
+  isAvailable: boolean
+  barcode?: string
+  ingredients?: string[]
+  allergens?: string[]
+  nutritionalInfo?: {
+    calories: number
+    protein: number
+    carbs: number
+    fat: number
+  }
+}
+
+export interface CartItem {
+  id: string
+  name: string
+  nameAmharic: string
   price: number
   quantity: number
+  image: string
+  category: string
   specialInstructions?: string
-  modifications?: string[]
-  totalPrice: number
+  barcode?: string
 }
 
-// የትዕዛዝ መረጃ
 export interface Order {
   id: string
-  orderNumber: string
-  tableNumber?: string
+  items: CartItem[]
+  total: number
+  status: "pending" | "preparing" | "ready" | "served" | "cancelled"
   customerName?: string
-  customerPhone?: string
-  customerAddress?: string
-  orderType: OrderType
-  items: OrderItem[]
-  subtotal: number
-  tax: number
-  discount: number
-  totalAmount: number
-  status: OrderStatus
-  paymentStatus: PaymentStatus
-  paymentMethod?: string
+  tableNumber?: number
+  orderType: "dine-in" | "takeout" | "delivery"
   createdAt: Date
   updatedAt: Date
-  completedAt?: Date
-  estimatedTime?: number // በደቂቃ
-  actualTime?: number
-  employeeId: string
-  employeeName: string
-  kitchenNotes?: string
-  customerNotes?: string
+  estimatedTime?: number
+  specialInstructions?: string
+  paymentMethod?: "cash" | "card" | "mobile"
+  paymentStatus?: "pending" | "paid" | "refunded"
+  barcode?: string
 }
 
-// የትዕዛዝ ስታቲስቲክስ
 export interface OrderStats {
   totalOrders: number
   pendingOrders: number
   completedOrders: number
-  cancelledOrders: number
   totalRevenue: number
   averageOrderValue: number
-  averagePreparationTime: number
-  ordersByType: Record<OrderType, number>
-  ordersByStatus: Record<OrderStatus, number>
-  topSellingItems: Array<{
-    foodId: string
-    foodName: string
-    quantity: number
-    revenue: number
+  popularItems: Array<{
+    id: string
+    name: string
+    nameAmharic: string
+    count: number
   }>
-}
-
-// የትዕዛዝ ማጣሪያ
-export interface OrderFilter {
-  status?: OrderStatus[]
-  orderType?: OrderType[]
-  dateFrom?: Date
-  dateTo?: Date
-  employeeId?: string
-  tableNumber?: string
-  customerName?: string
 }
