@@ -1,125 +1,177 @@
-export interface EmailConfig {
+interface EmailConfig {
   provider: "smtp" | "sendgrid" | "mailgun" | "ses"
-  apiKey?: string
   host?: string
   port?: number
   username?: string
   password?: string
+  apiKey?: string
   from: string
 }
 
-export interface EmailTemplate {
-  id: string
-  name: string
+interface EmailTemplate {
   subject: string
-  htmlContent: string
-  textContent: string
-  variables: string[]
+  html: string
+  text: string
 }
 
-export class EmailService {
+interface EmailData {
+  to: string
+  subject: string
+  html?: string
+  text?: string
+  template?: string
+  variables?: Record<string, any>
+}
+
+class EmailService {
   private config: EmailConfig
 
   constructor(config: EmailConfig) {
     this.config = config
   }
 
-  async sendEmail(to: string, templateId: string, variables: Record<string, string>) {
-    // Mock implementation - in production, integrate with actual email service
-    console.log(`Sending email to ${to} using template ${templateId}`)
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    return {
-      success: true,
-      messageId: `msg_${Date.now()}`,
-      timestamp: new Date().toISOString(),
+  async sendEmail(data: EmailData): Promise<boolean> {
+    try {
+      switch (this.config.provider) {
+        case "smtp":
+          return await this.sendSMTP(data)
+        case "sendgrid":
+          return await this.sendSendGrid(data)
+        default:
+          return await this.sendSMTP(data)
+      }
+    } catch (error) {
+      console.error("Email sending failed:", error)
+      return false
     }
   }
 
-  async sendPasswordReset(email: string, resetToken: string, language = "am") {
-    const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${resetToken}`
+  private async sendSMTP(data: EmailData): Promise<boolean> {
+    // Simulate SMTP sending
+    console.log("Sending email via SMTP:", {
+      to: data.to,
+      subject: data.subject,
+      from: this.config.from,
+    })
+
+    // In production, use nodemailer or similar
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    return true
+  }
+
+  private async sendSendGrid(data: EmailData): Promise<boolean> {
+    // Simulate SendGrid API call
+    console.log("Sending email via SendGrid:", {
+      to: data.to,
+      subject: data.subject,
+      from: this.config.from,
+    })
+
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    return true
+  }
+
+  async sendPasswordReset(email: string, resetToken: string, language: "en" | "am" = "en"): Promise<boolean> {
+    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${resetToken}`
 
     const templates = {
-      am: {
-        subject: "የይለፍ ቃል ዳግም ማስተካከያ",
-        html: `
-          <h2>የይለፍ ቃል ዳግም ማስተካከያ</h2>
-          <p>የይለፍ ቃልዎን ለመቀየር የሚከተለውን አገናኝ ይጫኑ:</p>
-          <a href="${resetLink}" style="background: #f97316; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
-            የይለፍ ቃል ቀይር
-          </a>
-          <p>ይህ አገናኝ በ15 ደቂቃ ውስጥ ይጠፋል።</p>
-        `,
-        text: `የይለፍ ቃልዎን ለመቀየር ይህንን አገናኝ ይጠቀሙ: ${resetLink}`,
-      },
       en: {
-        subject: "Password Reset Request",
+        subject: "Password Reset Request - Cultural Restaurant",
         html: `
-          <h2>Password Reset Request</h2>
-          <p>Click the following link to reset your password:</p>
-          <a href="${resetLink}" style="background: #f97316; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
-            Reset Password
-          </a>
-          <p>This link will expire in 15 minutes.</p>
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #f97316;">Password Reset Request</h2>
+            <p>You have requested to reset your password for Cultural Restaurant POS system.</p>
+            <p>Click the button below to reset your password:</p>
+            <a href="${resetUrl}" style="background-color: #f97316; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 20px 0;">Reset Password</a>
+            <p>This link will expire in 15 minutes.</p>
+            <p>If you didn't request this, please ignore this email.</p>
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+            <p style="color: #666; font-size: 12px;">© 2024 Cultural Restaurant. All rights reserved.</p>
+          </div>
         `,
-        text: `Use this link to reset your password: ${resetLink}`,
+        text: `Password Reset Request\n\nYou have requested to reset your password.\n\nReset your password: ${resetUrl}\n\nThis link expires in 15 minutes.\n\nIf you didn't request this, please ignore this email.`,
+      },
+      am: {
+        subject: "የይለፍ ቃል ዳግም ማስተካከያ ጥያቄ - የባህል ምግብ ቤት",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #f97316;">የይለፍ ቃል ዳግም ማስተካከያ ጥያቄ</h2>
+            <p>ለባህል ምግብ ቤት POS ስርዓት የይለፍ ቃልዎን ዳግም ለማስተካከል ጠይቀዋል።</p>
+            <p>የይለፍ ቃልዎን ዳግም ለማስተካከል ከታች ያለውን ቁልፍ ይጫኑ:</p>
+            <a href="${resetUrl}" style="background-color: #f97316; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 20px 0;">የይለፍ ቃል ዳግም አስተካክል</a>
+            <p>ይህ አገናኝ በ15 ደቂቃ ውስጥ ይጠፋል።</p>
+            <p>ይህን ካልጠየቁ፣ እባክዎ ይህን ኢሜይል ይተዉት።</p>
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+            <p style="color: #666; font-size: 12px;">© 2024 የባህል ምግብ ቤት። ሁሉም መብቶች የተጠበቁ ናቸው።</p>
+          </div>
+        `,
+        text: `የይለፍ ቃል ዳግም ማስተካከያ ጥያቄ\n\nየይለፍ ቃልዎን ዳግም ለማስተካከል ጠይቀዋል።\n\nየይለፍ ቃል ዳግም አስተካክል: ${resetUrl}\n\nይህ አገናኝ በ15 ደቂቃ ውስጥ ይጠፋል።\n\nይህን ካልጠየቁ፣ እባክዎ ይህን ኢሜይል ይተዉት።`,
       },
     }
 
-    const template = templates[language as keyof typeof templates] || templates.am
+    const template = templates[language]
 
-    return this.sendEmail(email, "password-reset", {
-      resetLink,
+    return await this.sendEmail({
+      to: email,
       subject: template.subject,
-      htmlContent: template.html,
-      textContent: template.text,
+      html: template.html,
+      text: template.text,
     })
   }
 
-  async sendOrderConfirmation(email: string, orderData: any, language = "am") {
+  async sendOrderConfirmation(email: string, orderData: any, language: "en" | "am" = "en"): Promise<boolean> {
     const templates = {
-      am: {
-        subject: `ትዕዛዝ ተረጋግጧል - #${orderData.id}`,
+      en: {
+        subject: `Order Confirmation #${orderData.id} - Cultural Restaurant`,
         html: `
-          <h2>ትዕዛዝዎ ተረጋግጧል</h2>
-          <p>ውድ ${orderData.customerName},</p>
-          <p>ትዕዛዝዎ ተቀብለናል እና እየተዘጋጀ ነው።</p>
-          <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
-            <h3>የትዕዛዝ ዝርዝር:</h3>
-            <p><strong>ትዕዛዝ ቁጥር:</strong> #${orderData.id}</p>
-            <p><strong>ጠቅላላ ዋጋ:</strong> ${orderData.total} ብር</p>
-            <p><strong>የመውጫ ጊዜ:</strong> ${orderData.estimatedTime}</p>
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #f97316;">Order Confirmation</h2>
+            <p>Thank you for your order!</p>
+            <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3>Order #${orderData.id}</h3>
+              <p><strong>Total:</strong> ${orderData.total} ETB</p>
+              <p><strong>Status:</strong> ${orderData.status}</p>
+            </div>
+            <p>We'll notify you when your order is ready.</p>
           </div>
         `,
       },
-      en: {
-        subject: `Order Confirmed - #${orderData.id}`,
+      am: {
+        subject: `የትዕዛዝ ማረጋገጫ #${orderData.id} - የባህል ምግብ ቤት`,
         html: `
-          <h2>Your Order is Confirmed</h2>
-          <p>Dear ${orderData.customerName},</p>
-          <p>We have received your order and it's being prepared.</p>
-          <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
-            <h3>Order Details:</h3>
-            <p><strong>Order Number:</strong> #${orderData.id}</p>
-            <p><strong>Total Amount:</strong> ${orderData.total} ETB</p>
-            <p><strong>Estimated Time:</strong> ${orderData.estimatedTime}</p>
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #f97316;">የትዕዛዝ ማረጋገጫ</h2>
+            <p>ለትዕዛዝዎ እናመሰግናለን!</p>
+            <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3>ትዕዛዝ #${orderData.id}</h3>
+              <p><strong>ጠቅላላ:</strong> ${orderData.total} ብር</p>
+              <p><strong>ሁኔታ:</strong> ${orderData.status}</p>
+            </div>
+            <p>ትዕዛዝዎ ሲዘጋጅ እናሳውቅዎታለን።</p>
           </div>
         `,
       },
     }
 
-    const template = templates[language as keyof typeof templates] || templates.am
-    return this.sendEmail(email, "order-confirmation", template)
+    const template = templates[language]
+
+    return await this.sendEmail({
+      to: email,
+      subject: template.subject,
+      html: template.html,
+    })
   }
 }
 
-export const emailService = new EmailService({
+// Create email service instance
+const emailConfig: EmailConfig = {
   provider: "smtp",
   host: process.env.SMTP_HOST || "localhost",
   port: Number.parseInt(process.env.SMTP_PORT || "587"),
   username: process.env.SMTP_USERNAME,
   password: process.env.SMTP_PASSWORD,
   from: process.env.SMTP_FROM || "noreply@restaurant.com",
-})
+}
+
+export const emailService = new EmailService(emailConfig)
+export { EmailService, type EmailConfig, type EmailData }

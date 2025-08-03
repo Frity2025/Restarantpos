@@ -77,8 +77,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Simulate API call delay
     await new Promise((resolve) => setTimeout(resolve, 1500))
 
-    if (foundEmployee && foundEmployee.isActive) {
-      // In a real app, you'd validate the password here
+    // Check credentials - for demo purposes, accept simple passwords
+    const validCredentials =
+      foundEmployee &&
+      ((email === "admin@restaurant.com" && password === "admin") ||
+        (email === "cashier@restaurant.com" && password === "cashier") ||
+        (email === "kitchen@restaurant.com" && password === "kitchen") ||
+        foundEmployee.email === email) // For other cases, just check email exists
+
+    if (validCredentials && foundEmployee.isActive) {
       const employeeWithLastLogin = {
         ...foundEmployee,
         lastLogin: new Date().toISOString(),

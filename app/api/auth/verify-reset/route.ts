@@ -3,24 +3,23 @@ import { passwordResetService } from "@/lib/auth/password-reset"
 
 export async function POST(request: NextRequest) {
   try {
-    const { token, code, identifier, newPassword } = await request.json()
+    const body = await request.json()
+    const { token, code, newPassword, isCode = false } = body
 
-    if (token && newPassword) {
-      // Token-based reset (email)
-      const success = await passwordResetService.resetPassword(token, newPassword)
-      return NextResponse.json({ success })
-    } else if (code && identifier && newPassword) {
-      // Code-based reset (SMS)
-      const success = await passwordResetService.resetPasswordWithCode(identifier, code, newPassword)
-      return NextResponse.json({ success })
-    } else if (code && identifier) {
-      // Code verification only
-      const resetRequest = await passwordResetService.verifyResetCode(identifier, code)
-      return NextResponse.json({ valid: !!resetRequest })
+    if (!newPassword) {
+      return NextResponse.json({ success: false, message: "New password is required" }, { status: 400 })
     }
 
-    return NextResponse.json({ error: "Invalid request parameters" }, { status: 400 })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!token && !code) {
+      return NextResponse.json({ success: false, message: "Token or code is required" }, { status: 400 })
+    }
+
+    const tokenOrCode = isCode ? code : token
+    const result = await passwordResetService.resetPassword(tokenOrCode, newPassword, isCode)
+
+    return NextResponse.json(result)
+  } catch (error) {
+    console.error("Password reset verification error:", error)
+    return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 })
   }
 }

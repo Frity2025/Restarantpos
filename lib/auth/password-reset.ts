@@ -1,7 +1,7 @@
-import { emailService } from "../integrations/email-service"
-import { smsService } from "../integrations/sms-service"
+import { emailService } from "@/lib/integrations/email-service"
+import { smsService } from "@/lib/integrations/sms-service"
 
-export interface PasswordResetRequest {
+interface PasswordResetRequest {
   id: string
   email?: string
   phone?: string
@@ -9,11 +9,11 @@ export interface PasswordResetRequest {
   code?: string
   expiresAt: Date
   used: boolean
-  createdAt: Date
+  method: "email" | "sms"
 }
 
 class PasswordResetService {
-  private resetRequests: Map<string, PasswordResetRequest> = new Map()
+  private requests: Map<string, PasswordResetRequest> = new Map()
 
   generateToken(): string {
     return Math.random().toString(36).substring(2) + Date.now().toString(36)
@@ -23,30 +23,51 @@ class PasswordResetService {
     return Math.floor(100000 + Math.random() * 900000).toString()
   }
 
-  async requestPasswordReset(identifier: string, method: "email" | "sms", language = "am") {
-    const isEmail = identifier.includes("@")
-    const token = this.generateToken()
-    const code = this.generateCode()
-
-    const resetRequest: PasswordResetRequest = {
-      id: `reset_${Date.now()}`,
-      email: isEmail ? identifier : undefined,
-      phone: !isEmail ? identifier : undefined,
-      token,
-      code: method === "sms" ? code : undefined,
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
-      used: false,
-      createdAt: new Date(),
-    }
-
-    this.resetRequests.set(token, resetRequest)
-
+  async requestPasswordReset(
+    identifier: string,
+    method: "email" | "sms" = "email",
+    language: "en" | "am" = "en",
+  ): Promise<{ success: boolean; message: string }> {
     try {
-      if (method === "email" && isEmail) {
-        await emailService.sendPasswordReset(identifier, token, language)
-      } else if (method === "sms" && !isEmail) {
-        await smsService.sendPasswordResetCode(identifier, code, language)
+      const token = this.generateToken()
+      const code = this.generateCode()
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
+
+      const request: PasswordResetRequest = {
+        id: token,
+        token,
+        expiresAt,
+        used: false,
+        method,
       }
+
+      if (method === "email") {
+        request.email = identifier
+        const emailSent = await emailService.sendPasswordReset(identifier, token, language)
+
+        if (!emailSent) {
+          return {
+            success: false,
+            message: language === "am" ? "ኢሜይል መላክ አልተሳካም" : "Failed to send email",
+          }
+        }
+      } else {
+        request.phone = identifier
+        request.code = code
+        const smsSent = await smsService.sendPasswordResetCode(identifier, code, language)
+
+        if (!smsSent) {
+          return {
+            success: false,
+            message: language === "am" ? "SMS መላክ አልተሳካም" : "Failed to send SMS",
+          }
+        }
+      }
+
+      this.requests.set(token, request)
+
+      // Clean up expired requests
+      this.cleanupExpiredRequests()
 
       return {
         success: true,
@@ -56,99 +77,86 @@ class PasswordResetService {
               ? "የይለፍ ቃል ዳግም ማስተካከያ አገናኝ ወደ ኢሜይልዎ ተልኳል"
               : "Password reset link sent to your email"
             : language === "am"
-              ? "የይለፍ ቃል ዳግም ማስተካከያ ኮድ ወደ ስልክዎ ተልኳል"
-              : "Password reset code sent to your phone",
-        requestId: resetRequest.id,
+              ? "የማረጋገጫ ኮድ ወደ ስልክዎ ተልኳል"
+              : "Verification code sent to your phone",
       }
     } catch (error) {
-      this.resetRequests.delete(token)
-      throw new Error(language === "am" ? "የይለፍ ቃል ዳግም ማስተካከያ መላክ አልተሳካም" : "Failed to send password reset")
-    }
-  }
-
-  async verifyResetToken(token: string): Promise<PasswordResetRequest | null> {
-    const resetRequest = this.resetRequests.get(token)
-
-    if (!resetRequest) {
-      return null
-    }
-
-    if (resetRequest.used || resetRequest.expiresAt < new Date()) {
-      this.resetRequests.delete(token)
-      return null
-    }
-
-    return resetRequest
-  }
-
-  async verifyResetCode(identifier: string, code: string): Promise<PasswordResetRequest | null> {
-    for (const [token, request] of this.resetRequests.entries()) {
-      if (
-        (request.email === identifier || request.phone === identifier) &&
-        request.code === code &&
-        !request.used &&
-        request.expiresAt > new Date()
-      ) {
-        return request
+      console.error("Password reset request failed:", error)
+      return {
+        success: false,
+        message: language === "am" ? "የይለፍ ቃል ዳግም ማስተካከያ ጥያቄ አልተሳካም" : "Password reset request failed",
       }
     }
-    return null
   }
 
-  async resetPassword(token: string, newPassword: string): Promise<boolean> {
-    const resetRequest = this.resetRequests.get(token)
+  async verifyResetToken(token: string): Promise<{ valid: boolean; request?: PasswordResetRequest }> {
+    const request = this.requests.get(token)
 
-    if (!resetRequest || resetRequest.used || resetRequest.expiresAt < new Date()) {
-      return false
+    if (!request) {
+      return { valid: false }
     }
 
-    // In a real app, you would hash the password and update the database
-    console.log(`Password reset for ${resetRequest.email || resetRequest.phone}`)
-
-    // Mark as used
-    resetRequest.used = true
-    this.resetRequests.set(token, resetRequest)
-
-    // Clean up after some time
-    setTimeout(() => {
-      this.resetRequests.delete(token)
-    }, 60000) // 1 minute
-
-    return true
-  }
-
-  async resetPasswordWithCode(identifier: string, code: string, newPassword: string): Promise<boolean> {
-    const resetRequest = await this.verifyResetCode(identifier, code)
-
-    if (!resetRequest) {
-      return false
+    if (request.used || request.expiresAt < new Date()) {
+      return { valid: false }
     }
 
-    // In a real app, you would hash the password and update the database
-    console.log(`Password reset for ${identifier}`)
-
-    // Mark as used
-    resetRequest.used = true
-
-    return true
+    return { valid: true, request }
   }
 
-  cleanupExpiredRequests() {
+  async verifyResetCode(code: string): Promise<{ valid: boolean; request?: PasswordResetRequest }> {
+    for (const [token, request] of this.requests.entries()) {
+      if (request.code === code && !request.used && request.expiresAt > new Date()) {
+        return { valid: true, request }
+      }
+    }
+
+    return { valid: false }
+  }
+
+  async resetPassword(
+    tokenOrCode: string,
+    newPassword: string,
+    isCode = false,
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const verification = isCode ? await this.verifyResetCode(tokenOrCode) : await this.verifyResetToken(tokenOrCode)
+
+      if (!verification.valid || !verification.request) {
+        return {
+          success: false,
+          message: "Invalid or expired reset token/code",
+        }
+      }
+
+      // Mark as used
+      verification.request.used = true
+      this.requests.set(verification.request.token, verification.request)
+
+      // In a real application, you would update the user's password in the database
+      console.log("Password reset successful for:", verification.request.email || verification.request.phone)
+
+      return {
+        success: true,
+        message: "Password reset successful",
+      }
+    } catch (error) {
+      console.error("Password reset failed:", error)
+      return {
+        success: false,
+        message: "Password reset failed",
+      }
+    }
+  }
+
+  private cleanupExpiredRequests(): void {
     const now = new Date()
-    for (const [token, request] of this.resetRequests.entries()) {
+    for (const [token, request] of this.requests.entries()) {
       if (request.expiresAt < now) {
-        this.resetRequests.delete(token)
+        this.requests.delete(token)
       }
     }
   }
 }
 
 export const passwordResetService = new PasswordResetService()
-
-// Clean up expired requests every 5 minutes
-setInterval(
-  () => {
-    passwordResetService.cleanupExpiredRequests()
-  },
-  5 * 60 * 1000,
-)
+export { PasswordResetService, type PasswordResetRequest }

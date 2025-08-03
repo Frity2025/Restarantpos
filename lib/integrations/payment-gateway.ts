@@ -1,127 +1,159 @@
-export interface PaymentConfig {
+interface PaymentConfig {
   provider: "stripe" | "paypal" | "chapa" | "telebirr"
-  apiKey: string
+  publicKey: string
   secretKey: string
   webhookSecret?: string
-  currency: string
 }
 
-export interface PaymentIntent {
-  id: string
+interface PaymentData {
   amount: number
   currency: string
-  status: "pending" | "processing" | "succeeded" | "failed" | "canceled"
-  paymentMethod: string
-  metadata?: Record<string, any>
+  description: string
+  customerEmail?: string
+  customerPhone?: string
+  orderId: string
 }
 
-export class PaymentGateway {
+interface PaymentResult {
+  success: boolean
+  transactionId?: string
+  paymentUrl?: string
+  error?: string
+}
+
+class PaymentGateway {
   private config: PaymentConfig
 
   constructor(config: PaymentConfig) {
     this.config = config
   }
 
-  async createPaymentIntent(amount: number, metadata: Record<string, any>): Promise<PaymentIntent> {
-    // Mock implementation - in production, integrate with actual payment gateway
-    console.log(`Creating payment intent for ${amount} ${this.config.currency}`)
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    return {
-      id: `pi_${Date.now()}`,
-      amount,
-      currency: this.config.currency,
-      status: "pending",
-      paymentMethod: "card",
-      metadata,
+  async createPayment(data: PaymentData): Promise<PaymentResult> {
+    try {
+      switch (this.config.provider) {
+        case "stripe":
+          return await this.createStripePayment(data)
+        case "chapa":
+          return await this.createChapaPayment(data)
+        case "telebirr":
+          return await this.createTelebirrPayment(data)
+        default:
+          return await this.createChapaPayment(data)
+      }
+    } catch (error) {
+      console.error("Payment creation failed:", error)
+      return {
+        success: false,
+        error: "Payment processing failed",
+      }
     }
   }
 
-  async confirmPayment(paymentIntentId: string): Promise<PaymentIntent> {
-    console.log(`Confirming payment ${paymentIntentId}`)
+  private async createStripePayment(data: PaymentData): Promise<PaymentResult> {
+    console.log("Creating Stripe payment:", data)
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    return {
-      id: paymentIntentId,
-      amount: 0, // Would be retrieved from actual payment
-      currency: this.config.currency,
-      status: Math.random() > 0.1 ? "succeeded" : "failed",
-      paymentMethod: "card",
-    }
-  }
-
-  async refundPayment(paymentIntentId: string, amount?: number): Promise<any> {
-    console.log(`Refunding payment ${paymentIntentId}`, amount ? `for ${amount}` : "full amount")
-
-    // Simulate API call
+    // Simulate Stripe API call
     await new Promise((resolve) => setTimeout(resolve, 1500))
 
     return {
-      id: `re_${Date.now()}`,
-      paymentIntentId,
-      amount: amount || 0,
-      status: "succeeded",
-      timestamp: new Date().toISOString(),
+      success: true,
+      transactionId: `stripe_${Date.now()}`,
+      paymentUrl: `https://checkout.stripe.com/pay/${Date.now()}`,
     }
   }
 
-  async processChapaPay(amount: number, phone: string, orderData: any) {
-    // Chapa payment integration for Ethiopian market
-    console.log(`Processing Chapa payment for ${amount} ETB from ${phone}`)
+  private async createChapaPayment(data: PaymentData): Promise<PaymentResult> {
+    console.log("Creating Chapa payment:", data)
 
-    const paymentData = {
-      amount,
-      currency: "ETB",
-      phone,
-      tx_ref: `tx_${Date.now()}`,
+    const chapaData = {
+      amount: data.amount,
+      currency: data.currency,
+      email: data.customerEmail,
+      first_name: "Customer",
+      last_name: "Name",
+      phone_number: data.customerPhone,
+      tx_ref: `chapa_${data.orderId}_${Date.now()}`,
       callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/payments/chapa/callback`,
       return_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment/success`,
+      description: data.description,
       customization: {
-        title: "የባህል ምግብ ቤት",
-        description: `Order #${orderData.id}`,
+        title: "Cultural Restaurant",
+        description: data.description,
       },
     }
 
-    // Mock Chapa API response
+    // Simulate Chapa API call
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
     return {
-      status: "success",
-      message: "Payment initiated",
-      data: {
-        checkout_url: `https://checkout.chapa.co/checkout/payment/${paymentData.tx_ref}`,
-        tx_ref: paymentData.tx_ref,
-      },
+      success: true,
+      transactionId: chapaData.tx_ref,
+      paymentUrl: `https://checkout.chapa.co/checkout/payment/${chapaData.tx_ref}`,
     }
   }
 
-  async processTelebirrPay(amount: number, phone: string, orderData: any) {
-    // Telebirr payment integration
-    console.log(`Processing Telebirr payment for ${amount} ETB from ${phone}`)
+  private async createTelebirrPayment(data: PaymentData): Promise<PaymentResult> {
+    console.log("Creating Telebirr payment:", data)
 
-    // Mock Telebirr API response
+    const telebirrData = {
+      amount: data.amount,
+      currency: data.currency,
+      orderId: data.orderId,
+      description: data.description,
+      customerPhone: data.customerPhone,
+      merchantId: "CULTURAL_RESTAURANT",
+      timestamp: Date.now(),
+    }
+
+    // Simulate Telebirr API call
     await new Promise((resolve) => setTimeout(resolve, 1200))
 
     return {
-      status: "success",
-      message: "Payment request sent to phone",
-      data: {
-        transaction_id: `tb_${Date.now()}`,
-        phone,
-        amount,
-        status: "pending",
-      },
+      success: true,
+      transactionId: `telebirr_${data.orderId}_${Date.now()}`,
+      paymentUrl: `telebirr://pay?amount=${data.amount}&merchant=CULTURAL_RESTAURANT&ref=${data.orderId}`,
+    }
+  }
+
+  async verifyPayment(transactionId: string): Promise<PaymentResult> {
+    console.log("Verifying payment:", transactionId)
+
+    // Simulate payment verification
+    await new Promise((resolve) => setTimeout(resolve, 800))
+
+    return {
+      success: true,
+      transactionId,
+    }
+  }
+
+  async refundPayment(transactionId: string, amount?: number): Promise<PaymentResult> {
+    console.log("Processing refund:", { transactionId, amount })
+
+    // Simulate refund processing
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+
+    return {
+      success: true,
+      transactionId: `refund_${transactionId}_${Date.now()}`,
     }
   }
 }
 
-export const paymentGateway = new PaymentGateway({
+// Create payment gateway instances
+const chapaConfig: PaymentConfig = {
   provider: "chapa",
-  apiKey: process.env.CHAPA_PUBLIC_KEY || "",
+  publicKey: process.env.CHAPA_PUBLIC_KEY || "",
   secretKey: process.env.CHAPA_SECRET_KEY || "",
-  currency: "ETB",
-})
+  webhookSecret: process.env.CHAPA_WEBHOOK_SECRET,
+}
+
+const telebirrConfig: PaymentConfig = {
+  provider: "telebirr",
+  publicKey: process.env.TELEBIRR_PUBLIC_KEY || "",
+  secretKey: process.env.TELEBIRR_SECRET_KEY || "",
+}
+
+export const chapaGateway = new PaymentGateway(chapaConfig)
+export const telebirrGateway = new PaymentGateway(telebirrConfig)
+export { PaymentGateway, type PaymentConfig, type PaymentData, type PaymentResult }

@@ -3,16 +3,18 @@ import { passwordResetService } from "@/lib/auth/password-reset"
 
 export async function POST(request: NextRequest) {
   try {
-    const { identifier, method, language } = await request.json()
+    const body = await request.json()
+    const { identifier, method = "email", language = "en" } = body
 
-    if (!identifier || !method) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    if (!identifier) {
+      return NextResponse.json({ success: false, message: "Identifier is required" }, { status: 400 })
     }
 
-    const result = await passwordResetService.requestPasswordReset(identifier, method, language || "am")
+    const result = await passwordResetService.requestPasswordReset(identifier, method, language)
 
     return NextResponse.json(result)
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    console.error("Password reset request error:", error)
+    return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 })
   }
 }
