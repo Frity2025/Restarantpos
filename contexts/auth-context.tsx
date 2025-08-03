@@ -2,150 +2,129 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 
-export interface Employee {
+interface User {
   id: string
-  name: string
   email: string
-  role: "admin" | "cashier" | "kitchen" | "waiter"
+  name: string
+  role: "admin" | "cashier" | "kitchen" | "waiter" | "manager"
   permissions: string[]
-  isActive: boolean
-  lastLogin?: string
 }
 
 interface AuthContextType {
-  employee: Employee | null
-  login: (email: string, password: string) => Promise<boolean>
+  user: User | null
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<boolean>
   logout: () => void
-  hasPermission: (permission: string) => boolean
-  switchRole: (role: Employee["role"]) => void
   isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Mock employees data
-const mockEmployees: Employee[] = [
-  {
+// Mock users for demo
+const mockUsers: Record<string, User> = {
+  "admin@restaurant.com": {
     id: "1",
-    name: "አህመድ አሊ",
     email: "admin@restaurant.com",
+    name: "Administrator",
     role: "admin",
-    permissions: ["admin_access", "pos_view", "pos_create", "view_orders", "kitchen_access", "view_analytics"],
-    isActive: true,
+    permissions: ["all"],
   },
-  {
+  "cashier@restaurant.com": {
     id: "2",
-    name: "ፋጢማ መሀመድ",
     email: "cashier@restaurant.com",
+    name: "Cashier",
     role: "cashier",
-    permissions: ["pos_view", "pos_create", "view_orders"],
-    isActive: true,
+    permissions: ["pos", "orders", "payments"],
   },
-  {
+  "kitchen@restaurant.com": {
     id: "3",
-    name: "ዳዊት ተስፋዬ",
     email: "kitchen@restaurant.com",
+    name: "Kitchen Staff",
     role: "kitchen",
-    permissions: ["kitchen_access", "view_orders"],
-    isActive: true,
+    permissions: ["kitchen", "orders"],
   },
-]
+}
+
+const mockPasswords: Record<string, string> = {
+  "admin@restaurant.com": "admin",
+  "cashier@restaurant.com": "cashier",
+  "kitchen@restaurant.com": "kitchen",
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [employee, setEmployee] = useState<Employee | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
-    // Check for stored auth data
-    const storedEmployee = localStorage.getItem("employee")
-    if (storedEmployee) {
-      try {
-        setEmployee(JSON.parse(storedEmployee))
-      } catch (error) {
-        console.error("Error parsing stored employee data:", error)
-        localStorage.removeItem("employee")
+    // Check for stored session
+    const storedUser = localStorage.getItem("user")
+    const sessionExpiry = localStorage.getItem("sessionExpiry")
+
+    if (storedUser && sessionExpiry) {
+      const expiry = new Date(sessionExpiry)
+      if (expiry > new Date()) {
+        setUser(JSON.parse(storedUser))
+      } else {
+        // Session expired
+        localStorage.removeItem("user")
+        localStorage.removeItem("sessionExpiry")
       }
     }
     setIsLoading(false)
   }, [])
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // Mock login logic with better validation
-    const foundEmployee = mockEmployees.find((emp) => emp.email === email)
+  const login = async (email: string, password: string, rememberMe = false): Promise<boolean> => {
+    try {
+      // Mock authentication
+      const mockUser = mockUsers[email]
+      const mockPassword = mockPasswords[email]
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+      if (mockUser && mockPassword === password) {
+        setUser(mockUser)
 
-    // Check credentials - for demo purposes, accept simple passwords
-    const validCredentials =
-      foundEmployee &&
-      ((email === "admin@restaurant.com" && password === "admin") ||
-        (email === "cashier@restaurant.com" && password === "cashier") ||
-        (email === "kitchen@restaurant.com" && password === "kitchen") ||
-        foundEmployee.email === email) // For other cases, just check email exists
+        // Store session
+        localStorage.setItem("user", JSON.stringify(mockUser))
 
-    if (validCredentials && foundEmployee.isActive) {
-      const employeeWithLastLogin = {
-        ...foundEmployee,
-        lastLogin: new Date().toISOString(),
+        // Set session expiry (24 hours if remember me, 8 hours otherwise)
+        const expiryHours = rememberMe ? 24 : 8
+        const expiry = new Date(Date.now() + expiryHours * 60 * 60 * 1000)
+        localStorage.setItem("sessionExpiry", expiry.toISOString())
+
+        // Redirect based on role
+        switch (mockUser.role) {
+          case "admin":
+            router.push("/admin")
+            break
+          case "cashier":
+            router.push("/")
+            break
+          case "kitchen":
+            router.push("/kitchen")
+            break
+          default:
+            router.push("/")
+        }
+
+        return true
       }
 
-      setEmployee(employeeWithLastLogin)
-      localStorage.setItem("employee", JSON.stringify(employeeWithLastLogin))
-      return true
+      return false
+    } catch (error) {
+      console.error("Login error:", error)
+      return false
     }
-
-    return false
   }
 
   const logout = () => {
-    setEmployee(null)
-    localStorage.removeItem("employee")
-    // In a real app, you might want to redirect to login page here
+    setUser(null)
+    localStorage.removeItem("user")
+    localStorage.removeItem("sessionExpiry")
+    router.push("/login")
   }
 
-  const hasPermission = (permission: string): boolean => {
-    if (!employee) return false
-    if (employee.role === "admin") return true
-    return employee.permissions.includes(permission) || false
-  }
-
-  const switchRole = (role: Employee["role"]) => {
-    if (!employee) return
-
-    const roleEmployee = mockEmployees.find((emp) => emp.role === role)
-    if (roleEmployee) {
-      const employeeWithLastLogin = {
-        ...roleEmployee,
-        lastLogin: new Date().toISOString(),
-      }
-      setEmployee(employeeWithLastLogin)
-      localStorage.setItem("employee", JSON.stringify(employeeWithLastLogin))
-    }
-  }
-
-  const value: AuthContextType = {
-    employee,
-    login,
-    logout,
-    hasPermission,
-    switchRole,
-    isLoading,
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-gray-600">እየጫን...</p>
-        </div>
-      </div>
-    )
-  }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={{ user, login, logout, isLoading }}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

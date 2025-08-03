@@ -3,18 +3,40 @@ import { passwordResetService } from "@/lib/auth/password-reset"
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { identifier, method = "email", language = "en" } = body
+    const { method, emailOrPhone } = await request.json()
 
-    if (!identifier) {
-      return NextResponse.json({ success: false, message: "Identifier is required" }, { status: 400 })
+    if (!method || !emailOrPhone) {
+      return NextResponse.json({ success: false, message: "Method and email/phone are required" }, { status: 400 })
     }
 
-    const result = await passwordResetService.requestPasswordReset(identifier, method, language)
+    let result
+    if (method === "email") {
+      result = await passwordResetService.initiateEmailReset(emailOrPhone)
+    } else if (method === "sms") {
+      result = await passwordResetService.initiateSMSReset(emailOrPhone)
+    } else {
+      return NextResponse.json({ success: false, message: "Invalid method" }, { status: 400 })
+    }
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error("Password reset request error:", error)
+    console.error("Password reset error:", error)
+    return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 })
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const { token, newPassword } = await request.json()
+
+    if (!token || !newPassword) {
+      return NextResponse.json({ success: false, message: "Token and new password are required" }, { status: 400 })
+    }
+
+    const result = await passwordResetService.resetPassword(token, newPassword)
+    return NextResponse.json(result)
+  } catch (error) {
+    console.error("Password reset error:", error)
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 })
   }
 }

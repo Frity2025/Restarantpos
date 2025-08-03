@@ -1,143 +1,145 @@
 import { emailService } from "@/lib/integrations/email-service"
 import { smsService } from "@/lib/integrations/sms-service"
+import crypto from "crypto"
 
-interface PasswordResetRequest {
-  id: string
+interface ResetToken {
+  token: string
   email?: string
   phone?: string
-  token: string
-  code?: string
   expiresAt: Date
-  used: boolean
-  method: "email" | "sms"
+  type: "email" | "sms"
 }
 
 class PasswordResetService {
-  private requests: Map<string, PasswordResetRequest> = new Map()
+  private tokens: Map<string, ResetToken> = new Map()
 
-  generateToken(): string {
-    return Math.random().toString(36).substring(2) + Date.now().toString(36)
+  generateResetToken(): string {
+    return crypto.randomBytes(32).toString("hex")
   }
 
-  generateCode(): string {
+  generateVerificationCode(): string {
     return Math.floor(100000 + Math.random() * 900000).toString()
   }
 
-  async requestPasswordReset(
-    identifier: string,
-    method: "email" | "sms" = "email",
-    language: "en" | "am" = "en",
+  async initiateEmailReset(
+    email: string,
+    language: "en" | "am" = "am",
   ): Promise<{ success: boolean; message: string }> {
     try {
-      const token = this.generateToken()
-      const code = this.generateCode()
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
+      const token = this.generateResetToken()
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
 
-      const request: PasswordResetRequest = {
-        id: token,
+      this.tokens.set(token, {
         token,
+        email,
         expiresAt,
-        used: false,
-        method,
-      }
+        type: "email",
+      })
 
-      if (method === "email") {
-        request.email = identifier
-        const emailSent = await emailService.sendPasswordReset(identifier, token, language)
+      const success = await emailService.sendPasswordReset(email, token, language)
 
-        if (!emailSent) {
-          return {
-            success: false,
-            message: language === "am" ? "ኢሜይል መላክ አልተሳካም" : "Failed to send email",
-          }
+      if (success) {
+        return {
+          success: true,
+          message:
+            language === "en" ? "Password reset link sent to your email" : "የይለፍ ቃል ዳግም ማስተካከያ አገናኝ ወደ ኢሜይልዎ ተልኳል",
         }
       } else {
-        request.phone = identifier
-        request.code = code
-        const smsSent = await smsService.sendPasswordResetCode(identifier, code, language)
-
-        if (!smsSent) {
-          return {
-            success: false,
-            message: language === "am" ? "SMS መላክ አልተሳካም" : "Failed to send SMS",
-          }
-        }
-      }
-
-      this.requests.set(token, request)
-
-      // Clean up expired requests
-      this.cleanupExpiredRequests()
-
-      return {
-        success: true,
-        message:
-          method === "email"
-            ? language === "am"
-              ? "የይለፍ ቃል ዳግም ማስተካከያ አገናኝ ወደ ኢሜይልዎ ተልኳል"
-              : "Password reset link sent to your email"
-            : language === "am"
-              ? "የማረጋገጫ ኮድ ወደ ስልክዎ ተልኳል"
-              : "Verification code sent to your phone",
-      }
-    } catch (error) {
-      console.error("Password reset request failed:", error)
-      return {
-        success: false,
-        message: language === "am" ? "የይለፍ ቃል ዳግም ማስተካከያ ጥያቄ አልተሳካም" : "Password reset request failed",
-      }
-    }
-  }
-
-  async verifyResetToken(token: string): Promise<{ valid: boolean; request?: PasswordResetRequest }> {
-    const request = this.requests.get(token)
-
-    if (!request) {
-      return { valid: false }
-    }
-
-    if (request.used || request.expiresAt < new Date()) {
-      return { valid: false }
-    }
-
-    return { valid: true, request }
-  }
-
-  async verifyResetCode(code: string): Promise<{ valid: boolean; request?: PasswordResetRequest }> {
-    for (const [token, request] of this.requests.entries()) {
-      if (request.code === code && !request.used && request.expiresAt > new Date()) {
-        return { valid: true, request }
-      }
-    }
-
-    return { valid: false }
-  }
-
-  async resetPassword(
-    tokenOrCode: string,
-    newPassword: string,
-    isCode = false,
-  ): Promise<{ success: boolean; message: string }> {
-    try {
-      const verification = isCode ? await this.verifyResetCode(tokenOrCode) : await this.verifyResetToken(tokenOrCode)
-
-      if (!verification.valid || !verification.request) {
         return {
           success: false,
-          message: "Invalid or expired reset token/code",
+          message: language === "en" ? "Failed to send reset email" : "የዳግም ማስተካከያ ኢሜይል መላክ አልተሳካም",
         }
       }
+    } catch (error) {
+      console.error("Email reset initiation failed:", error)
+      return {
+        success: false,
+        message: language === "en" ? "Password reset failed" : "የይለፍ ቃል ዳግም ማስተካከል አልተሳካም",
+      }
+    }
+  }
 
-      // Mark as used
-      verification.request.used = true
-      this.requests.set(verification.request.token, verification.request)
+  async initiateSMSReset(
+    phone: string,
+    language: "en" | "am" = "am",
+  ): Promise<{ success: boolean; message: string; code?: string }> {
+    try {
+      const code = this.generateVerificationCode()
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
 
-      // In a real application, you would update the user's password in the database
-      console.log("Password reset successful for:", verification.request.email || verification.request.phone)
+      this.tokens.set(code, {
+        token: code,
+        phone,
+        expiresAt,
+        type: "sms",
+      })
+
+      const success = await smsService.sendVerificationCode(phone, code, language)
+
+      if (success) {
+        return {
+          success: true,
+          message: language === "en" ? "Verification code sent to your phone" : "የማረጋገጫ ኮድ ወደ ስልክዎ ተልኳል",
+          code: process.env.NODE_ENV === "development" ? code : undefined, // Only in development
+        }
+      } else {
+        return {
+          success: false,
+          message: language === "en" ? "Failed to send verification code" : "የማረጋገጫ ኮድ መላክ አልተሳካም",
+        }
+      }
+    } catch (error) {
+      console.error("SMS reset initiation failed:", error)
+      return {
+        success: false,
+        message: language === "en" ? "Password reset failed" : "የይለፍ ቃል ዳግም ማስተካከል አልተሳካም",
+      }
+    }
+  }
+
+  async verifyResetToken(
+    token: string,
+  ): Promise<{ valid: boolean; email?: string; phone?: string; type?: "email" | "sms" }> {
+    const resetToken = this.tokens.get(token)
+
+    if (!resetToken) {
+      return { valid: false }
+    }
+
+    if (resetToken.expiresAt < new Date()) {
+      this.tokens.delete(token)
+      return { valid: false }
+    }
+
+    return {
+      valid: true,
+      email: resetToken.email,
+      phone: resetToken.phone,
+      type: resetToken.type,
+    }
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    const verification = await this.verifyResetToken(token)
+
+    if (!verification.valid) {
+      return {
+        success: false,
+        message: "Invalid or expired reset token",
+      }
+    }
+
+    try {
+      // Here you would update the password in your database
+      // For now, we'll just simulate success
+      console.log("Password reset for:", verification.email || verification.phone)
+
+      // Remove the used token
+      this.tokens.delete(token)
 
       return {
         success: true,
-        message: "Password reset successful",
+        message: "Password reset successfully",
       }
     } catch (error) {
       console.error("Password reset failed:", error)
@@ -148,15 +150,23 @@ class PasswordResetService {
     }
   }
 
-  private cleanupExpiredRequests(): void {
+  // Clean up expired tokens periodically
+  cleanupExpiredTokens(): void {
     const now = new Date()
-    for (const [token, request] of this.requests.entries()) {
-      if (request.expiresAt < now) {
-        this.requests.delete(token)
+    for (const [token, resetToken] of this.tokens.entries()) {
+      if (resetToken.expiresAt < now) {
+        this.tokens.delete(token)
       }
     }
   }
 }
 
 export const passwordResetService = new PasswordResetService()
-export { PasswordResetService, type PasswordResetRequest }
+
+// Clean up expired tokens every 5 minutes
+setInterval(
+  () => {
+    passwordResetService.cleanupExpiredTokens()
+  },
+  5 * 60 * 1000,
+)

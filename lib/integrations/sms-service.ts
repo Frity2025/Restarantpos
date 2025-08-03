@@ -1,8 +1,20 @@
 interface SMSConfig {
-  provider: "twilio" | "nexmo" | "local"
-  apiKey: string
-  apiSecret: string
-  from: string
+  provider: "ethio_telecom" | "safaricom" | "twilio"
+  ethioTelecom?: {
+    username: string
+    password: string
+    senderId: string
+  }
+  safaricom?: {
+    consumerKey: string
+    consumerSecret: string
+    shortCode: string
+  }
+  twilio?: {
+    accountSid: string
+    authToken: string
+    fromNumber: string
+  }
 }
 
 interface SMSData {
@@ -13,21 +25,38 @@ interface SMSData {
 class SMSService {
   private config: SMSConfig
 
-  constructor(config: SMSConfig) {
-    this.config = config
+  constructor() {
+    this.config = {
+      provider: (process.env.SMS_PROVIDER as "ethio_telecom" | "safaricom" | "twilio") || "ethio_telecom",
+      ethioTelecom: {
+        username: process.env.ETHIO_TELECOM_USERNAME || "",
+        password: process.env.ETHIO_TELECOM_PASSWORD || "",
+        senderId: process.env.ETHIO_TELECOM_SENDER_ID || "Restaurant",
+      },
+      safaricom: {
+        consumerKey: process.env.SAFARICOM_CONSUMER_KEY || "",
+        consumerSecret: process.env.SAFARICOM_CONSUMER_SECRET || "",
+        shortCode: process.env.SAFARICOM_SHORT_CODE || "",
+      },
+      twilio: {
+        accountSid: process.env.TWILIO_ACCOUNT_SID || "",
+        authToken: process.env.TWILIO_AUTH_TOKEN || "",
+        fromNumber: process.env.TWILIO_FROM_NUMBER || "",
+      },
+    }
   }
 
   async sendSMS(data: SMSData): Promise<boolean> {
     try {
       switch (this.config.provider) {
+        case "ethio_telecom":
+          return await this.sendViaEthioTelecom(data)
+        case "safaricom":
+          return await this.sendViaSafaricom(data)
         case "twilio":
-          return await this.sendTwilio(data)
-        case "nexmo":
-          return await this.sendNexmo(data)
-        case "local":
-          return await this.sendLocal(data)
+          return await this.sendViaTwilio(data)
         default:
-          return await this.sendLocal(data)
+          throw new Error("Invalid SMS provider")
       }
     } catch (error) {
       console.error("SMS sending failed:", error)
@@ -35,60 +64,49 @@ class SMSService {
     }
   }
 
-  private async sendTwilio(data: SMSData): Promise<boolean> {
-    console.log("Sending SMS via Twilio:", {
-      to: data.to,
-      from: this.config.from,
-      message: data.message.substring(0, 50) + "...",
-    })
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+  private async sendViaEthioTelecom(data: SMSData): Promise<boolean> {
+    // Mock Ethio Telecom SMS implementation
+    console.log("Sending SMS via Ethio Telecom:", data)
     return true
   }
 
-  private async sendNexmo(data: SMSData): Promise<boolean> {
-    console.log("Sending SMS via Nexmo:", {
-      to: data.to,
-      from: this.config.from,
-      message: data.message.substring(0, 50) + "...",
-    })
-
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+  private async sendViaSafaricom(data: SMSData): Promise<boolean> {
+    // Mock Safaricom SMS implementation
+    console.log("Sending SMS via Safaricom:", data)
     return true
   }
 
-  private async sendLocal(data: SMSData): Promise<boolean> {
-    console.log("Sending SMS via Local Provider:", {
-      to: data.to,
-      from: this.config.from,
-      message: data.message.substring(0, 50) + "...",
-    })
-
-    await new Promise((resolve) => setTimeout(resolve, 500))
+  private async sendViaTwilio(data: SMSData): Promise<boolean> {
+    // Mock Twilio SMS implementation
+    console.log("Sending SMS via Twilio:", data)
     return true
   }
 
-  async sendPasswordResetCode(phone: string, code: string, language: "en" | "am" = "en"): Promise<boolean> {
+  async sendVerificationCode(phoneNumber: string, code: string, language: "en" | "am" = "am"): Promise<boolean> {
     const messages = {
-      en: `Your password reset code for Cultural Restaurant is: ${code}. This code expires in 15 minutes.`,
-      am: `የባህል ምግብ ቤት የይለፍ ቃል ዳግም ማስተካከያ ኮድዎ: ${code}። ይህ ኮድ በ15 ደቂቃ ውስጥ ይጠፋል።`,
+      en: `Your verification code is: ${code}. This code will expire in 10 minutes.`,
+      am: `የማረጋገጫ ኮድዎ: ${code}። ይህ ኮድ በ10 ደቂቃ ውስጥ ይጠፋል።`,
     }
 
     return await this.sendSMS({
-      to: phone,
+      to: phoneNumber,
       message: messages[language],
     })
   }
 
-  async sendOrderNotification(phone: string, orderData: any, language: "en" | "am" = "en"): Promise<boolean> {
+  async sendOrderNotification(
+    phoneNumber: string,
+    orderNumber: string,
+    status: string,
+    language: "en" | "am" = "am",
+  ): Promise<boolean> {
     const messages = {
-      en: `Your order #${orderData.id} is ${orderData.status}. Total: ${orderData.total} ETB. Thank you for choosing Cultural Restaurant!`,
-      am: `የእርስዎ ትዕዛዝ #${orderData.id} ${orderData.status} ነው። ጠቅላላ: ${orderData.total} ብር። የባህል ምግብ ቤትን ስለመረጡ እናመሰግናለን!`,
+      en: `Order #${orderNumber} status: ${status}. Thank you for choosing our restaurant!`,
+      am: `ትዕዛዝ #${orderNumber} ሁኔታ: ${status}። ምግብ ቤታችንን ስለመረጡ እናመሰግናለን!`,
     }
 
     return await this.sendSMS({
-      to: phone,
+      to: phoneNumber,
       message: messages[language],
     })
   }
@@ -98,13 +116,4 @@ class SMSService {
   }
 }
 
-// Create SMS service instance
-const smsConfig: SMSConfig = {
-  provider: "local",
-  apiKey: process.env.SMS_API_KEY || "",
-  apiSecret: process.env.SMS_API_SECRET || "",
-  from: process.env.SMS_FROM || "Restaurant",
-}
-
-export const smsService = new SMSService(smsConfig)
-export { SMSService, type SMSConfig, type SMSData }
+export const smsService = new SMSService()
