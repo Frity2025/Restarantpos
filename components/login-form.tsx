@@ -9,6 +9,9 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
 import { useAuth } from "@/contexts/auth-context"
+import { useLanguage } from "@/contexts/language-context"
+import { LanguageSwitcher } from "@/components/language-switcher"
+import { ForgotPasswordForm } from "@/components/forgot-password-form"
 import {
   Eye,
   EyeOff,
@@ -31,13 +34,19 @@ export function LoginForm() {
   const [error, setError] = useState("")
   const [rememberMe, setRememberMe] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
   const { login } = useAuth()
+  const { t, language } = useLanguage()
 
   // Update time every second
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
+
+  if (showForgotPassword) {
+    return <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -46,7 +55,7 @@ export function LoginForm() {
 
     // Basic validation
     if (!email || !password) {
-      setError("እባክዎ ሁሉንም መስኮች ይሙሉ")
+      setError(t("auth.fillAllFields"))
       setIsLoading(false)
       return
     }
@@ -54,10 +63,10 @@ export function LoginForm() {
     try {
       const success = await login(email, password)
       if (!success) {
-        setError("የመግቢያ መረጃዎች ትክክል አይደሉም። እባክዎ እንደገና ይሞክሩ።")
+        setError(t("auth.invalidCredentials"))
       }
     } catch (err) {
-      setError("የመግቢያ ስህተት ተከስቷል። እባክዎ እንደገና ይሞክሩ።")
+      setError(t("auth.loginError"))
     } finally {
       setIsLoading(false)
     }
@@ -78,24 +87,29 @@ export function LoginForm() {
   const roleInfo = {
     admin: {
       icon: Shield,
-      title: "አስተዳዳሪ",
-      description: "ሙሉ የስርዓት መዳረሻ",
+      title: t("employees.admin"),
+      description: t("auth.adminDescription"),
       color: "bg-blue-500",
-      permissions: ["ሁሉንም ሪፖርቶች", "የሰራተኛ አስተዳደር", "የምግብ አስተዳደር", "የክምችት አስተዳደር"],
+      permissions: [
+        t("auth.allReports"),
+        t("auth.employeeManagement"),
+        t("auth.foodManagement"),
+        t("auth.inventoryManagement"),
+      ],
     },
     cashier: {
       icon: CreditCard,
-      title: "ገንዘብ ተቀባይ",
-      description: "የሽያጭ ነጥብ መዳረሻ",
+      title: t("employees.cashier"),
+      description: t("auth.cashierDescription"),
       color: "bg-green-500",
-      permissions: ["የሽያጭ ነጥብ", "የትዕዛዝ አስተዳደር", "የክፍያ ሂደት", "የደንበኛ አገልግሎት"],
+      permissions: [t("nav.pos"), t("auth.orderManagement"), t("auth.paymentProcess"), t("auth.customerService")],
     },
     kitchen: {
       icon: ChefHat,
-      title: "ኩሽና ሰራተኛ",
-      description: "የኩሽና ዳሽቦርድ መዳረሻ",
+      title: t("employees.kitchen"),
+      description: t("auth.kitchenDescription"),
       color: "bg-orange-500",
-      permissions: ["የትዕዛዝ እይታ", "የምግብ ዝግጅት", "የክምችት እይታ", "የኩሽና ሪፖርት"],
+      permissions: [t("auth.orderView"), t("auth.foodPreparation"), t("auth.inventoryView"), t("auth.kitchenReport")],
     },
   }
 
@@ -109,9 +123,13 @@ export function LoginForm() {
               <div className="p-3 bg-orange-500 rounded-full">
                 <Utensils className="h-8 w-8 text-white" />
               </div>
-              <h1 className="text-4xl font-bold text-gray-900">የባህል ምግብ ቤት</h1>
+              <h1 className="text-4xl font-bold text-gray-900">
+                {language === "am" ? "የባህል ምግብ ቤት" : "Cultural Restaurant"}
+              </h1>
             </div>
-            <p className="text-xl text-gray-600">ዘመናዊ የምግብ ቤት አስተዳደር ስርዓት</p>
+            <p className="text-xl text-gray-600">
+              {language === "am" ? "ዘመናዊ የምግብ ቤት አስተዳደር ስርዓት" : "Modern Restaurant Management System"}
+            </p>
           </div>
 
           {/* Current Time */}
@@ -119,10 +137,10 @@ export function LoginForm() {
             <CardContent className="p-6 text-center">
               <div className="flex items-center justify-center space-x-2 mb-2">
                 <Clock className="h-5 w-5 text-gray-500" />
-                <span className="text-sm text-gray-500">አሁን ያለው ጊዜ</span>
+                <span className="text-sm text-gray-500">{language === "am" ? "አሁን ያለው ጊዜ" : "Current Time"}</span>
               </div>
               <div className="text-2xl font-mono font-bold text-gray-900">
-                {currentTime.toLocaleTimeString("am-ET", {
+                {currentTime.toLocaleTimeString(language === "am" ? "am-ET" : "en-US", {
                   hour12: true,
                   hour: "2-digit",
                   minute: "2-digit",
@@ -130,7 +148,7 @@ export function LoginForm() {
                 })}
               </div>
               <div className="text-sm text-gray-600">
-                {currentTime.toLocaleDateString("am-ET", {
+                {currentTime.toLocaleDateString(language === "am" ? "am-ET" : "en-US", {
                   weekday: "long",
                   year: "numeric",
                   month: "long",
@@ -145,15 +163,15 @@ export function LoginForm() {
             <Card className="bg-white/50 backdrop-blur-sm border-0 shadow-lg">
               <CardContent className="p-4 text-center">
                 <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                <h3 className="font-semibold text-gray-900">ቀላል አጠቃቀም</h3>
-                <p className="text-sm text-gray-600">ለሁሉም ሰራተኞች ቀላል</p>
+                <h3 className="font-semibold text-gray-900">{language === "am" ? "ቀላል አጠቃቀም" : "Easy to Use"}</h3>
+                <p className="text-sm text-gray-600">{language === "am" ? "ለሁሉም ሰራተኞች ቀላል" : "Simple for all staff"}</p>
               </CardContent>
             </Card>
             <Card className="bg-white/50 backdrop-blur-sm border-0 shadow-lg">
               <CardContent className="p-4 text-center">
                 <Shield className="h-8 w-8 text-blue-500 mx-auto mb-2" />
-                <h3 className="font-semibold text-gray-900">ደህንነት</h3>
-                <p className="text-sm text-gray-600">የተጠበቀ መረጃ</p>
+                <h3 className="font-semibold text-gray-900">{language === "am" ? "ደህንነት" : "Security"}</h3>
+                <p className="text-sm text-gray-600">{language === "am" ? "የተጠበቀ መረጃ" : "Secure data"}</p>
               </CardContent>
             </Card>
           </div>
@@ -163,21 +181,27 @@ export function LoginForm() {
         <div className="w-full max-w-md mx-auto">
           <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
             <CardHeader className="text-center space-y-4 pb-6">
-              <div className="flex items-center justify-center lg:hidden space-x-3 mb-4">
-                <div className="p-2 bg-orange-500 rounded-full">
-                  <Utensils className="h-6 w-6 text-white" />
+              <div className="flex justify-between items-center">
+                <div className="flex items-center lg:hidden space-x-3">
+                  <div className="p-2 bg-orange-500 rounded-full">
+                    <Utensils className="h-6 w-6 text-white" />
+                  </div>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {language === "am" ? "የባህል ምግብ ቤት" : "Cultural Restaurant"}
+                  </h1>
                 </div>
-                <h1 className="text-2xl font-bold text-gray-900">የባህል ምግብ ቤት</h1>
+                <LanguageSwitcher />
               </div>
-              <CardTitle className="text-2xl font-bold text-gray-900">የሰራተኛ መግቢያ</CardTitle>
-              <CardDescription className="text-gray-600">የስራ መለያዎን ተጠቅመው ይግቡ</CardDescription>
+
+              <CardTitle className="text-2xl font-bold text-gray-900 mt-4">{t("auth.loginTitle")}</CardTitle>
+              <CardDescription className="text-gray-600">{t("auth.loginSubtitle")}</CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-6">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                    ኢሜይል አድራሻ
+                    {t("auth.email")}
                   </Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -195,7 +219,7 @@ export function LoginForm() {
 
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                    የይለፍ ቃል
+                    {t("auth.password")}
                   </Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -205,7 +229,7 @@ export function LoginForm() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-10 pr-10 h-11"
-                      placeholder="የይለፍ ቃልዎን ያስገቡ"
+                      placeholder={language === "am" ? "የይለፍ ቃልዎን ያስገቡ" : "Enter your password"}
                       required
                     />
                     <button
@@ -218,17 +242,27 @@ export function LoginForm() {
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="remember"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="rounded border-gray-300"
-                  />
-                  <Label htmlFor="remember" className="text-sm text-gray-600">
-                    ያስታውሱኝ
-                  </Label>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="remember"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    <Label htmlFor="remember" className="text-sm text-gray-600">
+                      {t("auth.rememberMe")}
+                    </Label>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-sm text-orange-600 hover:text-orange-700 p-0"
+                    onClick={() => setShowForgotPassword(true)}
+                  >
+                    {t("auth.forgotPassword")}
+                  </Button>
                 </div>
 
                 {error && (
@@ -246,10 +280,10 @@ export function LoginForm() {
                   {isLoading ? (
                     <div className="flex items-center space-x-2">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>እየገባ...</span>
+                      <span>{t("common.loading")}</span>
                     </div>
                   ) : (
-                    "ግባ"
+                    t("auth.login")
                   )}
                 </Button>
               </form>
@@ -260,7 +294,9 @@ export function LoginForm() {
                     <Separator className="w-full" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-gray-500">ወይም ፈጣን መግቢያ</span>
+                    <span className="bg-white px-2 text-gray-500">
+                      {language === "am" ? "ወይም ፈጣን መግቢያ" : "or quick login"}
+                    </span>
                   </div>
                 </div>
 
@@ -294,17 +330,20 @@ export function LoginForm() {
                 <CardContent className="p-4">
                   <h4 className="font-medium text-blue-900 mb-2 flex items-center">
                     <Shield className="h-4 w-4 mr-2" />
-                    የሚና መረጃ
+                    {language === "am" ? "የሚና መረጃ" : "Role Information"}
                   </h4>
                   <div className="space-y-2 text-xs text-blue-800">
                     <div>
-                      <strong>አስተዳዳሪ:</strong> ሙሉ የስርዓት መዳረሻ እና አስተዳደር
+                      <strong>{t("employees.admin")}:</strong>{" "}
+                      {language === "am" ? "ሙሉ የስርዓት መዳረሻ እና አስተዳደር" : "Full system access and management"}
                     </div>
                     <div>
-                      <strong>ገንዘብ ተቀባይ:</strong> የሽያጭ ነጥብ እና የክፍያ ሂደት
+                      <strong>{t("employees.cashier")}:</strong>{" "}
+                      {language === "am" ? "የሽያጭ ነጥብ እና የክፍያ ሂደት" : "Point of sale and payment processing"}
                     </div>
                     <div>
-                      <strong>ኩሽና:</strong> የትዕዛዝ እይታ እና የምግብ ዝግጅት
+                      <strong>{t("employees.kitchen")}:</strong>{" "}
+                      {language === "am" ? "የትዕዛዝ እይታ እና የምግብ ዝግጅት" : "Order view and food preparation"}
                     </div>
                   </div>
                 </CardContent>
@@ -314,7 +353,11 @@ export function LoginForm() {
 
           {/* Footer */}
           <div className="text-center mt-6 text-sm text-gray-500">
-            <p>© 2024 የባህል ምግብ ቤት. ሁሉም መብቶች የተጠበቁ ናቸው።</p>
+            <p>
+              {language === "am"
+                ? "© 2024 የባህል ምግብ ቤት. ሁሉም መብቶች የተጠበቁ ናቸው።"
+                : "© 2024 Cultural Restaurant. All rights reserved."}
+            </p>
           </div>
         </div>
       </div>
