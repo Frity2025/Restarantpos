@@ -27,17 +27,12 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Plus, Search, Edit, Trash2, Eye, Package, AlertTriangle, TrendingUp } from "lucide-react"
 import { AddFoodForm } from "./add-food-form"
-import {
-  foodItems,
-  categories,
-  addFoodItem,
-  updateFoodItem,
-  deleteFoodItem,
-  type FoodItem,
-} from "@/lib/food-management"
+import { foodService, categories, type FoodItem } from "@/lib/food-management"
 import { toast } from "@/hooks/use-toast"
+import { useLanguage } from "@/contexts/language-context"
 
 export function FoodManagementPanel() {
+  const { t, formatCurrency } = useLanguage()
   const [foods, setFoods] = useState<FoodItem[]>([])
   const [filteredFoods, setFilteredFoods] = useState<FoodItem[]>([])
   const [searchQuery, setSearchQuery] = useState("")
@@ -51,8 +46,9 @@ export function FoodManagementPanel() {
     try {
       setIsLoading(true)
       setError(null)
-      setFoods(foodItems)
-      setFilteredFoods(foodItems)
+      const allFoods = foodService.getAllFoods()
+      setFoods(allFoods)
+      setFilteredFoods(allFoods)
     } catch (err) {
       setError("Failed to load food items")
       console.error("Error loading food items:", err)
@@ -66,12 +62,7 @@ export function FoodManagementPanel() {
       let filtered = [...foods]
 
       if (searchQuery) {
-        filtered = filtered.filter(
-          (food) =>
-            food.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            food.nameEn?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            food.description?.toLowerCase().includes(searchQuery.toLowerCase()),
-        )
+        filtered = foodService.searchFoods(searchQuery)
       }
 
       if (selectedCategory !== "all") {
@@ -87,18 +78,23 @@ export function FoodManagementPanel() {
 
   const handleAddFood = async (foodData: Omit<FoodItem, "id">) => {
     try {
-      const newFood = addFoodItem(foodData)
-      setFoods((prev) => [...prev, newFood])
-      setIsAddDialogOpen(false)
-      toast({
-        title: "ተሳክቷል",
-        description: "አዲስ ምግብ ተጨምሯል",
-      })
+      const success = foodService.addFood(foodData)
+      if (success) {
+        const updatedFoods = foodService.getAllFoods()
+        setFoods(updatedFoods)
+        setIsAddDialogOpen(false)
+        toast({
+          title: t("success"),
+          description: t("itemAdded"),
+        })
+      } else {
+        throw new Error("Failed to add food")
+      }
     } catch (error) {
       console.error("Error adding food:", error)
       toast({
-        title: "ስህተት",
-        description: "ምግብ መጨመር አልተሳካም",
+        title: t("error"),
+        description: t("operationFailed"),
         variant: "destructive",
       })
     }
@@ -108,18 +104,23 @@ export function FoodManagementPanel() {
     if (!editingFood) return
 
     try {
-      const updatedFood = updateFoodItem(editingFood.id, foodData)
-      setFoods((prev) => prev.map((food) => (food.id === editingFood.id ? updatedFood : food)))
-      setEditingFood(null)
-      toast({
-        title: "ተሳክቷል",
-        description: "ምግብ ተዘምኗል",
-      })
+      const success = foodService.updateFood(editingFood.id, foodData)
+      if (success) {
+        const updatedFoods = foodService.getAllFoods()
+        setFoods(updatedFoods)
+        setEditingFood(null)
+        toast({
+          title: t("success"),
+          description: t("itemUpdated"),
+        })
+      } else {
+        throw new Error("Failed to update food")
+      }
     } catch (error) {
       console.error("Error updating food:", error)
       toast({
-        title: "ስህተት",
-        description: "ምግብ ማዘመን አልተሳካም",
+        title: t("error"),
+        description: t("operationFailed"),
         variant: "destructive",
       })
     }
@@ -127,17 +128,22 @@ export function FoodManagementPanel() {
 
   const handleDeleteFood = async (foodId: string) => {
     try {
-      deleteFoodItem(foodId)
-      setFoods((prev) => prev.filter((food) => food.id !== foodId))
-      toast({
-        title: "ተሳክቷል",
-        description: "ምግብ ተሰርዟል",
-      })
+      const success = foodService.deleteFood(foodId)
+      if (success) {
+        const updatedFoods = foodService.getAllFoods()
+        setFoods(updatedFoods)
+        toast({
+          title: t("success"),
+          description: t("itemDeleted"),
+        })
+      } else {
+        throw new Error("Failed to delete food")
+      }
     } catch (error) {
       console.error("Error deleting food:", error)
       toast({
-        title: "ስህተት",
-        description: "ምግብ መሰረዝ አልተሳካም",
+        title: t("error"),
+        description: t("operationFailed"),
         variant: "destructive",
       })
     }
@@ -145,21 +151,21 @@ export function FoodManagementPanel() {
 
   const getAvailabilityBadge = (available: boolean) => {
     return available ? (
-      <Badge className="bg-green-100 text-green-800">ይገኛል</Badge>
+      <Badge className="bg-green-100 text-green-800">{t("available")}</Badge>
     ) : (
-      <Badge className="bg-red-100 text-red-800">አይገኝም</Badge>
+      <Badge className="bg-red-100 text-red-800">{t("unavailable")}</Badge>
     )
   }
 
   const getCategoryName = (categoryId: string) => {
     const category = categories.find((cat) => cat.id === categoryId)
-    return category?.name || categoryId
+    return category?.nameAmharic || categoryId
   }
 
   const stats = {
     totalItems: foods.length,
-    availableItems: foods.filter((food) => food.available).length,
-    unavailableItems: foods.filter((food) => !food.available).length,
+    availableItems: foods.filter((food) => food.isAvailable).length,
+    unavailableItems: foods.filter((food) => !food.isAvailable).length,
     categories: [...new Set(foods.map((food) => food.category))].length,
   }
 
@@ -187,22 +193,29 @@ export function FoodManagementPanel() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">የምግብ አስተዳደር</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t("foodManagement")}</h2>
           <p className="text-gray-600">ምግቦችን ያስተዳድሩ እና ያዘምኑ</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
-              አዲስ ምግብ ጨምር
+              {t("addNewFood")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>አዲስ ምግብ ጨምር</DialogTitle>
+              <DialogTitle>{t("addNewFood")}</DialogTitle>
               <DialogDescription>አዲስ ምግብ ወደ ሜኑ ለመጨመር ዝርዝሮቹን ይሙሉ</DialogDescription>
             </DialogHeader>
-            <AddFoodForm onSubmit={handleAddFood} onCancel={() => setIsAddDialogOpen(false)} />
+            <AddFoodForm
+              onSuccess={() => {
+                setIsAddDialogOpen(false)
+                const updatedFoods = foodService.getAllFoods()
+                setFoods(updatedFoods)
+              }}
+              onCancel={() => setIsAddDialogOpen(false)}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -211,7 +224,7 @@ export function FoodManagementPanel() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">ጠቅላላ ምግቦች</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("totalItems")}</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -221,7 +234,7 @@ export function FoodManagementPanel() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">ይገኛሉ</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("availableItems")}</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -231,7 +244,7 @@ export function FoodManagementPanel() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">አይገኙም</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("unavailableItems")}</CardTitle>
             <AlertTriangle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
@@ -241,7 +254,7 @@ export function FoodManagementPanel() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">ምድቦች</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("categories")}</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -274,7 +287,7 @@ export function FoodManagementPanel() {
               <option value="all">ሁሉም ምድቦች</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
-                  {category.name}
+                  {category.nameAmharic}
                 </option>
               ))}
             </select>
@@ -319,14 +332,14 @@ export function FoodManagementPanel() {
                             <Package className="h-6 w-6 text-gray-400" />
                           </div>
                           <div>
-                            <p className="font-medium">{food.name}</p>
-                            <p className="text-sm text-gray-500">{food.nameEn}</p>
+                            <p className="font-medium">{food.nameAmharic}</p>
+                            <p className="text-sm text-gray-500">{food.name}</p>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>{getCategoryName(food.category)}</TableCell>
-                      <TableCell>{food.price} ብር</TableCell>
-                      <TableCell>{getAvailabilityBadge(food.available)}</TableCell>
+                      <TableCell>{formatCurrency(food.price)}</TableCell>
+                      <TableCell>{getAvailabilityBadge(food.isAvailable)}</TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
                           {(food.ingredients || []).slice(0, 2).map((ingredient, index) => (
@@ -363,7 +376,11 @@ export function FoodManagementPanel() {
                               {editingFood && (
                                 <AddFoodForm
                                   initialData={editingFood}
-                                  onSubmit={handleEditFood}
+                                  onSuccess={() => {
+                                    setEditingFood(null)
+                                    const updatedFoods = foodService.getAllFoods()
+                                    setFoods(updatedFoods)
+                                  }}
                                   onCancel={() => setEditingFood(null)}
                                   isEditing
                                 />
@@ -384,7 +401,7 @@ export function FoodManagementPanel() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>ምግብ ሰርዝ</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  እርግጠኛ ነዎት "{food.name}" ን መሰረዝ ይፈልጋሉ? ይህ እርምጃ መልሰው ማድረግ አይችሉም።
+                                  እርግጠኛ ነዎት "{food.nameAmharic}" ን መሰረዝ ይፈልጋሉ? ይህ እርምጃ መልሰው ማድረግ አይችሉም።
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>

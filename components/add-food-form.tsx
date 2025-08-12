@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -14,32 +13,35 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { BarcodeInput } from "./barcode-input"
 import { BarcodeGenerator } from "@/lib/barcode-generator"
-import { foodService } from "@/lib/food-management"
-import { inventoryService } from "@/lib/inventory-management"
+import { foodService, categories } from "@/lib/food-management"
 import { toast } from "@/hooks/use-toast"
+import { useLanguage } from "@/contexts/language-context"
 import type { Food } from "@/types/order"
 
 interface AddFoodFormProps {
   onSuccess: () => void
   onCancel: () => void
+  initialData?: Food
+  isEditing?: boolean
 }
 
-export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
+export function AddFoodForm({ onSuccess, onCancel, initialData, isEditing = false }: AddFoodFormProps) {
+  const { t } = useLanguage()
   const [formData, setFormData] = useState({
-    name: "",
-    nameAmharic: "",
-    description: "",
-    descriptionAmharic: "",
-    price: 0,
-    category: "",
-    preparationTime: 15,
-    spiceLevel: "medium" as "mild" | "medium" | "hot",
-    isVegetarian: false,
-    isAvailable: true,
-    barcode: "",
-    ingredients: [] as string[],
-    allergens: [] as string[],
-    nutritionalInfo: {
+    name: initialData?.name || "",
+    nameAmharic: initialData?.nameAmharic || "",
+    description: initialData?.description || "",
+    descriptionAmharic: initialData?.descriptionAmharic || "",
+    price: initialData?.price || 0,
+    category: initialData?.category || "",
+    preparationTime: initialData?.preparationTime || 15,
+    spiceLevel: (initialData?.spiceLevel as "mild" | "medium" | "hot") || "medium",
+    isVegetarian: initialData?.isVegetarian || false,
+    isAvailable: initialData?.isAvailable !== undefined ? initialData.isAvailable : true,
+    barcode: initialData?.barcode || "",
+    ingredients: initialData?.ingredients || [],
+    allergens: initialData?.allergens || [],
+    nutritionalInfo: initialData?.nutritionalInfo || {
       calories: 0,
       protein: 0,
       carbs: 0,
@@ -49,17 +51,6 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
 
   const [newIngredient, setNewIngredient] = useState("")
   const [newAllergen, setNewAllergen] = useState("")
-
-  const categories = [
-    { id: "appetizers", name: "Appetizers", nameAmharic: "ክፍተት ምግቦች" },
-    { id: "main-dishes", name: "Main Dishes", nameAmharic: "ዋና ምግቦች" },
-    { id: "desserts", name: "Desserts", nameAmharic: "ጣፋጭ ምግቦች" },
-    { id: "beverages", name: "Beverages", nameAmharic: "መጠጦች" },
-    { id: "sides", name: "Side Dishes", nameAmharic: "ተጨማሪ ምግቦች" },
-    { id: "specials", name: "Chef's Specials", nameAmharic: "ልዩ ምግቦች" },
-  ]
-
-  const inventoryItems = inventoryService.getAllInventoryItems()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -79,7 +70,7 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
       barcode = BarcodeGenerator.generateProductBarcode(Date.now().toString(), formData.category)
     }
 
-    const newFood: Omit<Food, "id"> = {
+    const foodData: Omit<Food, "id"> = {
       name: formData.name,
       nameAmharic: formData.nameAmharic,
       description: formData.description,
@@ -97,18 +88,23 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
       nutritionalInfo: formData.nutritionalInfo,
     }
 
-    const success = foodService.addFood(newFood)
+    let success = false
+    if (isEditing && initialData) {
+      success = foodService.updateFood(initialData.id, foodData)
+    } else {
+      success = foodService.addFood(foodData)
+    }
 
     if (success) {
       toast({
-        title: "Food Added Successfully",
-        description: `${formData.nameAmharic} has been added to the menu.`,
+        title: t("success"),
+        description: isEditing ? t("itemUpdated") : t("itemAdded"),
       })
       onSuccess()
     } else {
       toast({
-        title: "Error",
-        description: "Failed to add food item. Please try again.",
+        title: t("error"),
+        description: t("operationFailed"),
         variant: "destructive",
       })
     }
@@ -159,12 +155,12 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Basic Information</CardTitle>
+          <CardTitle>መሰረታዊ መረጃ</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="name">Name (English) *</Label>
+              <Label htmlFor="name">ስም (English) *</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -173,7 +169,7 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
               />
             </div>
             <div>
-              <Label htmlFor="nameAmharic">Name (አማርኛ) *</Label>
+              <Label htmlFor="nameAmharic">ስም (አማርኛ) *</Label>
               <Input
                 id="nameAmharic"
                 value={formData.nameAmharic}
@@ -185,7 +181,7 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="description">Description (English)</Label>
+              <Label htmlFor="description">መግለጫ (English)</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -194,7 +190,7 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
               />
             </div>
             <div>
-              <Label htmlFor="descriptionAmharic">Description (አማርኛ)</Label>
+              <Label htmlFor="descriptionAmharic">መግለጫ (አማርኛ)</Label>
               <Textarea
                 id="descriptionAmharic"
                 value={formData.descriptionAmharic}
@@ -206,7 +202,7 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="price">Price (ብር) *</Label>
+              <Label htmlFor="price">ዋጋ (ብር) *</Label>
               <Input
                 id="price"
                 type="number"
@@ -218,13 +214,13 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
               />
             </div>
             <div>
-              <Label htmlFor="category">Category *</Label>
+              <Label htmlFor="category">ምድብ *</Label>
               <Select
                 value={formData.category}
                 onValueChange={(value) => setFormData((prev) => ({ ...prev, category: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder="ምድብ ይምረጡ" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
@@ -236,7 +232,7 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
               </Select>
             </div>
             <div>
-              <Label htmlFor="preparationTime">Prep Time (minutes)</Label>
+              <Label htmlFor="preparationTime">የዝግጅት ጊዜ (ደቂቃ)</Label>
               <Input
                 id="preparationTime"
                 type="number"
@@ -249,7 +245,7 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="spiceLevel">Spice Level</Label>
+              <Label htmlFor="spiceLevel">የቅመም ደረጃ</Label>
               <Select
                 value={formData.spiceLevel}
                 onValueChange={(value: "mild" | "medium" | "hot") =>
@@ -260,9 +256,9 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mild">🌶️ Mild</SelectItem>
-                  <SelectItem value="medium">🌶️🌶️ Medium</SelectItem>
-                  <SelectItem value="hot">🌶️🌶️🌶️ Hot</SelectItem>
+                  <SelectItem value="mild">🌶️ ቀላል</SelectItem>
+                  <SelectItem value="medium">🌶️🌶️ መካከለኛ</SelectItem>
+                  <SelectItem value="hot">🌶️🌶️🌶️ ጠንካራ</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -273,7 +269,7 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
                   checked={formData.isVegetarian}
                   onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, isVegetarian: checked as boolean }))}
                 />
-                <Label htmlFor="isVegetarian">Vegetarian</Label>
+                <Label htmlFor="isVegetarian">ቬጀቴሪያን</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox
@@ -281,7 +277,7 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
                   checked={formData.isAvailable}
                   onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, isAvailable: checked as boolean }))}
                 />
-                <Label htmlFor="isAvailable">Available</Label>
+                <Label htmlFor="isAvailable">ይገኛል</Label>
               </div>
             </div>
           </div>
@@ -290,7 +286,7 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Barcode & Inventory</CardTitle>
+          <CardTitle>ባርኮድ</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-2">
@@ -298,12 +294,12 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
               <BarcodeInput
                 value={formData.barcode}
                 onChange={(value) => setFormData((prev) => ({ ...prev, barcode: value }))}
-                label="Product Barcode"
-                placeholder="Scan or enter barcode"
+                label="የምርት ባርኮድ"
+                placeholder="ባርኮድ ይስካን ወይም ያስገቡ"
               />
             </div>
             <Button type="button" variant="outline" onClick={generateBarcode} className="mt-6 bg-transparent">
-              Generate
+              ፍጠር
             </Button>
           </div>
         </CardContent>
@@ -311,16 +307,16 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Ingredients & Allergens</CardTitle>
+          <CardTitle>ንጥረ ነገሮች እና አለርጂ አስነሳሾች</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Ingredients</Label>
+            <Label>ንጥረ ነገሮች</Label>
             <div className="flex gap-2 mb-2">
               <Input
                 value={newIngredient}
                 onChange={(e) => setNewIngredient(e.target.value)}
-                placeholder="Add ingredient..."
+                placeholder="ንጥረ ነገር ጨምር..."
                 onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addIngredient())}
               />
               <Button type="button" onClick={addIngredient} size="sm">
@@ -338,12 +334,12 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
           </div>
 
           <div>
-            <Label>Allergens</Label>
+            <Label>አለርጂ አስነሳሾች</Label>
             <div className="flex gap-2 mb-2">
               <Input
                 value={newAllergen}
                 onChange={(e) => setNewAllergen(e.target.value)}
-                placeholder="Add allergen..."
+                placeholder="አለርጂ አስነሳሽ ጨምር..."
                 onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addAllergen())}
               />
               <Button type="button" onClick={addAllergen} size="sm">
@@ -364,12 +360,12 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Nutritional Information</CardTitle>
+          <CardTitle>የአመጋገብ መረጃ</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-4 gap-4">
             <div>
-              <Label htmlFor="calories">Calories</Label>
+              <Label htmlFor="calories">ካሎሪ</Label>
               <Input
                 id="calories"
                 type="number"
@@ -387,7 +383,7 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
               />
             </div>
             <div>
-              <Label htmlFor="protein">Protein (g)</Label>
+              <Label htmlFor="protein">ፕሮቲን (ግ)</Label>
               <Input
                 id="protein"
                 type="number"
@@ -406,7 +402,7 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
               />
             </div>
             <div>
-              <Label htmlFor="carbs">Carbs (g)</Label>
+              <Label htmlFor="carbs">ካርቦሃይድሬት (ግ)</Label>
               <Input
                 id="carbs"
                 type="number"
@@ -425,7 +421,7 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
               />
             </div>
             <div>
-              <Label htmlFor="fat">Fat (g)</Label>
+              <Label htmlFor="fat">ስብ (ግ)</Label>
               <Input
                 id="fat"
                 type="number"
@@ -449,11 +445,11 @@ export function AddFoodForm({ onSuccess, onCancel }: AddFoodFormProps) {
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
+          {t("cancel")}
         </Button>
         <Button type="submit">
           <Plus className="mr-2 h-4 w-4" />
-          Add Food Item
+          {isEditing ? "ምግብ አዘምን" : "ምግብ ጨምር"}
         </Button>
       </div>
     </form>

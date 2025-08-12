@@ -188,6 +188,17 @@ export const sampleFoods: Food[] = [
   },
 ]
 
+export const categories = [
+  { id: "appetizers", name: "Appetizers", nameAmharic: "ክፍተት ምግቦች" },
+  { id: "main-dishes", name: "Main Dishes", nameAmharic: "ዋና ምግቦች" },
+  { id: "desserts", name: "Desserts", nameAmharic: "ጣፋጭ ምግቦች" },
+  { id: "beverages", name: "Beverages", nameAmharic: "መጠጦች" },
+  { id: "sides", name: "Side Dishes", nameAmharic: "ተጨማሪ ምግቦች" },
+  { id: "specials", name: "Chef's Specials", nameAmharic: "ልዩ ምግቦች" },
+]
+
+export type FoodItem = Food
+
 class FoodService {
   private foods: Food[] = [...sampleFoods]
 
@@ -278,3 +289,21 @@ class FoodService {
 }
 
 export const foodService = new FoodService()
+
+// Legacy exports for backward compatibility
+export const foodItems = sampleFoods
+export const addFoodItem = (food: Omit<Food, "id">): Food => {
+  const newFood: Food = {
+    ...food,
+    id: Date.now().toString(),
+  }
+  foodService.addFood(food)
+  return newFood
+}
+export const updateFoodItem = (id: string, updates: Partial<Food>): Food => {
+  foodService.updateFood(id, updates)
+  return foodService.getFoodById(id)!
+}
+export const deleteFoodItem = (id: string): void => {
+  foodService.deleteFood(id)
+}

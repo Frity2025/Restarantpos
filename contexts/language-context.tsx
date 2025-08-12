@@ -2,39 +2,47 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
-import { translations, getNestedTranslation } from "@/lib/i18n/translations"
-
-type Language = "en" | "am"
+import { translations, type Language, type TranslationKey } from "@/lib/i18n/translations"
 
 interface LanguageContextType {
   language: Language
-  setLanguage: (lang: Language) => void
-  t: (key: string, params?: Record<string, string | number>) => string
+  setLanguage: (language: Language) => void
+  t: (key: TranslationKey) => string
+  formatCurrency: (amount: number) => string
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>("am") // Default to Amharic
+  const [language, setLanguage] = useState<Language>("am") // Default to Amharic
 
   useEffect(() => {
     // Load saved language preference
-    const savedLanguage = localStorage.getItem("language") as Language
+    const savedLanguage = localStorage.getItem("restaurant-language") as Language
     if (savedLanguage && (savedLanguage === "en" || savedLanguage === "am")) {
-      setLanguageState(savedLanguage)
+      setLanguage(savedLanguage)
     }
   }, [])
 
-  const setLanguage = (lang: Language) => {
-    setLanguageState(lang)
-    localStorage.setItem("language", lang)
+  const handleSetLanguage = (newLanguage: Language) => {
+    setLanguage(newLanguage)
+    localStorage.setItem("restaurant-language", newLanguage)
   }
 
-  const t = (key: string, params?: Record<string, string | number>): string => {
-    return getNestedTranslation(translations[language], key, params)
+  const t = (key: TranslationKey): string => {
+    return translations[language][key] || translations.en[key] || key
   }
 
-  return <LanguageContext.Provider value={{ language, setLanguage, t }}>{children}</LanguageContext.Provider>
+  const formatCurrency = (amount: number): string => {
+    const formattedAmount = new Intl.NumberFormat("en-US").format(amount)
+    return language === "am" ? `${formattedAmount} ብር` : `${formattedAmount} ETB`
+  }
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage, t, formatCurrency }}>
+      {children}
+    </LanguageContext.Provider>
+  )
 }
 
 export function useLanguage() {
