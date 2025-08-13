@@ -1,273 +1,145 @@
 "use client"
 
-import { useAuth } from "@/contexts/auth-context"
-import { CartProvider } from "@/contexts/cart-context"
-import { DiningMode } from "@/components/dining-mode"
-import { CategoryFilter } from "@/components/category-filter"
+import { useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { FoodGrid } from "@/components/food-grid"
 import { Cart } from "@/components/cart"
+import { CategoryFilter } from "@/components/category-filter"
+import { DiningMode } from "@/components/dining-mode"
+import { Header } from "@/components/header"
+import { SidebarNav } from "@/components/sidebar-nav"
 import { POSBarcodeScanner } from "@/components/pos-barcode-scanner"
-import { InventoryBarcodeScanner } from "@/components/inventory-barcode-scanner"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import {
-  Users,
-  ShoppingCart,
-  Clock,
-  TrendingUp,
-  Package,
-  AlertTriangle,
-  Camera,
-  Utensils,
-  ChefHat,
-  CreditCard,
-} from "lucide-react"
-import { useState } from "react"
+import { useCart } from "@/contexts/cart-context"
+import { useLanguage } from "@/contexts/language-context"
+import { foodService } from "@/lib/food-management"
+import { ShoppingCart, Utensils, Clock, Users } from "lucide-react"
+import Link from "next/link"
 
 export default function HomePage() {
-  const { employee } = useAuth()
-  const [selectedCategory, setSelectedCategory] = useState<string>("all")
+  const { t, formatCurrency } = useLanguage()
+  const { items, getTotalPrice } = useCart()
+  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [diningMode, setDiningMode] = useState<"dine-in" | "takeout" | "delivery">("dine-in")
+  const [foods, setFoods] = useState(foodService.getAllFoods())
 
-  if (!employee) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 flex items-center justify-center">
-        <div className="text-center space-y-6 max-w-md mx-auto p-8">
-          <div className="flex items-center justify-center space-x-3 mb-6">
-            <div className="p-3 bg-orange-500 rounded-full">
-              <Utensils className="h-8 w-8 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900">የባህል ምግብ ቤት</h1>
-          </div>
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-800">እንኳን ደህና መጡ</h2>
-            <p className="text-gray-600">ለመቀጠል እባክዎ ይግቡ</p>
-            <Button
-              onClick={() => (window.location.href = "/login")}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3"
-            >
-              ወደ መግቢያ ገጽ ይሂዱ
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
+  const filteredFoods = selectedCategory === "all" ? foods : foods.filter((food) => food.category === selectedCategory)
+
+  const stats = {
+    totalOrders: 156,
+    revenue: 45231,
+    activeOrders: 12,
+    avgOrderTime: 18,
   }
 
-  // Admin Dashboard
-  if (employee.role === "admin") {
-    return (
-      <div className="container mx-auto py-6 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Restaurant management overview</p>
-          </div>
-          <Badge variant="outline" className="text-lg px-4 py-2">
-            Administrator
-          </Badge>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Today's Orders</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">127</div>
-              <p className="text-xs text-muted-foreground">+12% from yesterday</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">45,231 ብር</div>
-              <p className="text-xs text-muted-foreground">+8% from yesterday</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Tables</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">18/24</div>
-              <p className="text-xs text-muted-foreground">75% occupancy</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-orange-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">7</div>
-              <p className="text-xs text-muted-foreground">Requires attention</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Camera className="h-5 w-5" />
-                Barcode Scanner
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">Scan product or inventory barcodes for quick access</p>
-              <div className="grid grid-cols-2 gap-4">
-                <POSBarcodeScanner />
-                <InventoryBarcodeScanner />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button className="w-full justify-start bg-transparent" variant="outline">
-                <Package className="mr-2 h-4 w-4" />
-                Manage Inventory
-              </Button>
-              <Button className="w-full justify-start bg-transparent" variant="outline">
-                <Users className="mr-2 h-4 w-4" />
-                View Staff
-              </Button>
-              <Button className="w-full justify-start bg-transparent" variant="outline">
-                <TrendingUp className="mr-2 h-4 w-4" />
-                Sales Reports
-              </Button>
-              <Button className="w-full justify-start bg-transparent" variant="outline">
-                <Utensils className="mr-2 h-4 w-4" />
-                Menu Management
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
-  }
-
-  // Kitchen Dashboard
-  if (employee.role === "kitchen") {
-    return (
-      <div className="container mx-auto py-6 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">Kitchen Dashboard</h1>
-            <p className="text-muted-foreground">Order preparation and management</p>
-          </div>
-          <Badge variant="outline" className="text-lg px-4 py-2">
-            <ChefHat className="mr-2 h-4 w-4" />
-            Kitchen Staff
-          </Badge>
-        </div>
-
-        {/* Kitchen Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
-              <Clock className="h-4 w-4 text-orange-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">8</div>
-              <p className="text-xs text-muted-foreground">Avg wait: 12 min</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-              <ChefHat className="h-4 w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">5</div>
-              <p className="text-xs text-muted-foreground">Being prepared</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed Today</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">89</div>
-              <p className="text-xs text-muted-foreground">+15% from yesterday</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Barcode Scanner for Kitchen */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Camera className="h-5 w-5" />
-              Kitchen Barcode Scanner
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Scan order barcodes or ingredient barcodes for quick access
-            </p>
-            <POSBarcodeScanner />
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  // Cashier/POS Interface
   return (
-    <CartProvider>
-      <div className="container mx-auto py-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Point of Sale</h1>
-            <p className="text-muted-foreground">Process orders and payments</p>
-          </div>
-          <Badge variant="outline" className="text-lg px-4 py-2">
-            <CreditCard className="mr-2 h-4 w-4" />
-            Cashier
-          </Badge>
-        </div>
+    <div className="flex h-screen bg-gray-100">
+      <SidebarNav />
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left Column - Menu and Scanner */}
-          <div className="lg:col-span-3 space-y-6">
-            {/* Barcode Scanner */}
-            <POSBarcodeScanner />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header />
 
-            {/* Dining Mode */}
-            <DiningMode />
+        <div className="flex-1 flex overflow-hidden">
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Stats Bar */}
+            <div className="bg-white border-b p-4">
+              <div className="grid grid-cols-4 gap-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">{t("totalRevenue")}</CardTitle>
+                    <Utensils className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{formatCurrency(stats.revenue)}</div>
+                    <p className="text-xs text-muted-foreground">+12% from yesterday</p>
+                  </CardContent>
+                </Card>
 
-            {/* Category Filter */}
-            <CategoryFilter selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                    <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.totalOrders}</div>
+                    <p className="text-xs text-muted-foreground">+8 new orders</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Active Orders</CardTitle>
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.activeOrders}</div>
+                    <p className="text-xs text-muted-foreground">In kitchen</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Avg Order Time</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.avgOrderTime}m</div>
+                    <p className="text-xs text-muted-foreground">-2m from average</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="bg-white border-b p-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <DiningMode value={diningMode} onChange={setDiningMode} />
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <ShoppingCart className="h-3 w-3" />
+                    {items.length} items - {formatCurrency(getTotalPrice())}
+                  </Badge>
+                </div>
+
+                <div className="flex gap-2">
+                  <Link href="/test-barcode">
+                    <Button variant="outline" size="sm">
+                      Test Barcode Scanner
+                    </Button>
+                  </Link>
+                  <Link href="/admin">
+                    <Button variant="outline" size="sm">
+                      Admin Panel
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
+              <CategoryFilter selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
+            </div>
 
             {/* Food Grid */}
-            <FoodGrid selectedCategory={selectedCategory} />
+            <div className="flex-1 overflow-auto p-4">
+              <FoodGrid foods={filteredFoods} />
+            </div>
           </div>
 
-          {/* Right Column - Cart */}
-          <div className="lg:col-span-1">
-            <Cart />
+          {/* Right Sidebar */}
+          <div className="w-96 bg-white border-l flex flex-col">
+            {/* Barcode Scanner */}
+            <div className="p-4 border-b">
+              <POSBarcodeScanner />
+            </div>
+
+            {/* Cart */}
+            <div className="flex-1 overflow-auto">
+              <Cart />
+            </div>
           </div>
         </div>
       </div>
-    </CartProvider>
+    </div>
   )
 }

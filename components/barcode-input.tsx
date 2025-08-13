@@ -13,17 +13,9 @@ interface BarcodeInputProps {
   label?: string
   placeholder?: string
   disabled?: boolean
-  className?: string
 }
 
-export function BarcodeInput({
-  value,
-  onChange,
-  label = "Barcode",
-  placeholder = "Enter or scan barcode",
-  disabled = false,
-  className = "",
-}: BarcodeInputProps) {
+export function BarcodeInput({ value, onChange, label, placeholder, disabled }: BarcodeInputProps) {
   const [isScannerOpen, setIsScannerOpen] = useState(false)
 
   const handleScan = (barcode: string) => {
@@ -32,25 +24,17 @@ export function BarcodeInput({
   }
 
   return (
-    <div className={className}>
-      {label && <Label htmlFor="barcode-input">{label}</Label>}
+    <div className="space-y-2">
+      {label && <Label>{label}</Label>}
       <div className="flex gap-2">
         <Input
-          id="barcode-input"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
           className="font-mono"
         />
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          onClick={() => setIsScannerOpen(true)}
-          disabled={disabled}
-          className="bg-transparent"
-        >
+        <Button type="button" variant="outline" size="icon" onClick={() => setIsScannerOpen(true)} disabled={disabled}>
           <Camera className="h-4 w-4" />
         </Button>
       </div>

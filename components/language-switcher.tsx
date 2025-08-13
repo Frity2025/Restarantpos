@@ -12,7 +12,7 @@ export function LanguageSwitcher() {
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={toggleLanguage} className="gap-2 bg-transparent">
+    <Button variant="outline" size="sm" onClick={toggleLanguage} className="flex items-center gap-2 bg-transparent">
       <Languages className="h-4 w-4" />
       {language === "en" ? "አማርኛ" : "English"}
     </Button>

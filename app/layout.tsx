@@ -12,7 +12,7 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Restaurant POS System",
-  description: "Complete restaurant management system with POS, inventory, and analytics",
+  description: "Complete restaurant point of sale system with inventory management",
     generator: 'v0.app'
 }
 
