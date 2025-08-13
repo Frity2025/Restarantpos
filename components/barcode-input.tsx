@@ -1,50 +1,46 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
-import { Camera } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { BarcodeScannerModal } from "./barcode-scanner-modal"
+import { Scan } from "lucide-react"
 
 interface BarcodeInputProps {
-  value: string
-  onChange: (value: string) => void
-  label?: string
+  onScan: (barcode: string) => void
   placeholder?: string
-  disabled?: boolean
+  label?: string
 }
 
-export function BarcodeInput({ value, onChange, label, placeholder, disabled }: BarcodeInputProps) {
-  const [isScannerOpen, setIsScannerOpen] = useState(false)
+export function BarcodeInput({ onScan, placeholder = "Enter or scan barcode", label = "Barcode" }: BarcodeInputProps) {
+  const [barcode, setBarcode] = useState("")
 
-  const handleScan = (barcode: string) => {
-    onChange(barcode)
-    setIsScannerOpen(false)
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (barcode.trim()) {
+      onScan(barcode.trim())
+      setBarcode("")
+    }
   }
 
   return (
-    <div className="space-y-2">
-      {label && <Label>{label}</Label>}
+    <form onSubmit={handleSubmit} className="space-y-2">
+      <Label htmlFor="barcode-input">{label}</Label>
       <div className="flex gap-2">
         <Input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
+          id="barcode-input"
+          type="text"
+          value={barcode}
+          onChange={(e) => setBarcode(e.target.value)}
           placeholder={placeholder}
-          disabled={disabled}
-          className="font-mono"
+          className="flex-1"
         />
-        <Button type="button" variant="outline" size="icon" onClick={() => setIsScannerOpen(true)} disabled={disabled}>
-          <Camera className="h-4 w-4" />
+        <Button type="submit" size="icon" disabled={!barcode.trim()}>
+          <Scan className="h-4 w-4" />
         </Button>
       </div>
-
-      <BarcodeScannerModal
-        isOpen={isScannerOpen}
-        onClose={() => setIsScannerOpen(false)}
-        onScan={handleScan}
-        title="Scan Barcode"
-      />
-    </div>
+    </form>
   )
 }

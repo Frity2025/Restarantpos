@@ -19,7 +19,7 @@ import Link from "next/link"
 
 export default function HomePage() {
   const { t, formatCurrency } = useLanguage()
-  const { items, getTotalPrice } = useCart()
+  const { items, getTotal } = useCart() // Fixed: using getTotal instead of getTotalPrice
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [diningMode, setDiningMode] = useState<"dine-in" | "takeout" | "delivery">("dine-in")
   const [foods, setFoods] = useState(foodService.getAllFoods())
@@ -99,7 +99,7 @@ export default function HomePage() {
                   <DiningMode value={diningMode} onChange={setDiningMode} />
                   <Badge variant="outline" className="flex items-center gap-1">
                     <ShoppingCart className="h-3 w-3" />
-                    {items.length} items - {formatCurrency(getTotalPrice())}
+                    {items.length} items - {formatCurrency(getTotal())}
                   </Badge>
                 </div>
 

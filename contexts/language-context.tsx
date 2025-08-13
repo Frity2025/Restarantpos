@@ -14,10 +14,10 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>("am") // Default to Amharic
+  const [language, setLanguage] = useState<Language>("en")
 
   useEffect(() => {
-    const savedLanguage = localStorage.getItem("language") as Language
+    const savedLanguage = localStorage.getItem("restaurant-language") as Language
     if (savedLanguage && (savedLanguage === "en" || savedLanguage === "am")) {
       setLanguage(savedLanguage)
     }
@@ -25,21 +25,28 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang)
-    localStorage.setItem("language", lang)
+    localStorage.setItem("restaurant-language", lang)
   }
 
   const t = (key: TranslationKey): string => {
-    return translations[language][key] || key
+    return translations[language][key] || translations.en[key] || key
   }
 
   const formatCurrency = (amount: number): string => {
     const formatted = new Intl.NumberFormat("en-US").format(amount)
-    const currency = language === "am" ? "ብር" : "ETB"
-    return `${formatted} ${currency}`
+    const symbol = language === "am" ? "ብር" : "ETB"
+    return `${formatted} ${symbol}`
   }
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage, t, formatCurrency }}>
+    <LanguageContext.Provider
+      value={{
+        language,
+        setLanguage: handleSetLanguage,
+        t,
+        formatCurrency,
+      }}
+    >
       {children}
     </LanguageContext.Provider>
   )
