@@ -1,12 +1,12 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState, useCallback } from "react"
 import { translations, type Language, type TranslationKey } from "@/lib/i18n/translations"
 
 interface LanguageContextType {
   language: Language
-  setLanguage: (lang: Language) => void
+  setLanguage: (language: Language) => void
   t: (key: TranslationKey) => string
   formatCurrency: (amount: number) => string
 }
@@ -16,38 +16,24 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>("en")
 
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem("restaurant-pos-language") as Language
-    if (savedLanguage && (savedLanguage === "en" || savedLanguage === "am")) {
-      setLanguage(savedLanguage)
-    }
-  }, [])
+  const t = useCallback(
+    (key: TranslationKey): string => {
+      return translations[language][key] || key
+    },
+    [language],
+  )
 
-  const handleSetLanguage = (lang: Language) => {
-    setLanguage(lang)
-    localStorage.setItem("restaurant-pos-language", lang)
-  }
-
-  const t = (key: TranslationKey): string => {
-    return translations[language][key] || translations.en[key] || key
-  }
-
-  const formatCurrency = (amount: number): string => {
-    const formatted = new Intl.NumberFormat("en-US").format(amount)
-    return language === "am" ? `${formatted} ብር` : `${formatted} ETB`
-  }
+  const formatCurrency = useCallback(
+    (amount: number): string => {
+      const formatted = new Intl.NumberFormat("en-US").format(amount)
+      const symbol = language === "am" ? "ብር" : "ETB"
+      return `${formatted} ${symbol}`
+    },
+    [language],
+  )
 
   return (
-    <LanguageContext.Provider
-      value={{
-        language,
-        setLanguage: handleSetLanguage,
-        t,
-        formatCurrency,
-      }}
-    >
-      {children}
-    </LanguageContext.Provider>
+    <LanguageContext.Provider value={{ language, setLanguage, t, formatCurrency }}>{children}</LanguageContext.Provider>
   )
 }
 

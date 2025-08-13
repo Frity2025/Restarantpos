@@ -17,7 +17,7 @@ import { ShoppingCart, Search, Scan } from "lucide-react"
 import type { Food } from "@/types/order"
 
 export default function HomePage() {
-  const { items, getTotal, getTotalItems } = useCart()
+  const { items, getTotal, getItemCount } = useCart() // Fixed: using getItemCount instead of getTotalItems
   const { t, formatCurrency } = useLanguage()
   const [foods, setFoods] = useState<Food[]>([])
   const [filteredFoods, setFilteredFoods] = useState<Food[]>([])
@@ -134,7 +134,7 @@ export default function HomePage() {
                     <ShoppingCart className="h-5 w-5" />
                     {t("orders")}
                   </div>
-                  <Badge variant="secondary">{getTotalItems()} items</Badge>
+                  <Badge variant="secondary">{getItemCount()} items</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
