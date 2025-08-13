@@ -1,142 +1,152 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import { FoodGrid } from "@/components/food-grid"
 import { Cart } from "@/components/cart"
 import { CategoryFilter } from "@/components/category-filter"
 import { DiningMode } from "@/components/dining-mode"
-import { Header } from "@/components/header"
-import { SidebarNav } from "@/components/sidebar-nav"
 import { POSBarcodeScanner } from "@/components/pos-barcode-scanner"
 import { useCart } from "@/contexts/cart-context"
 import { useLanguage } from "@/contexts/language-context"
 import { foodService } from "@/lib/food-management"
-import { ShoppingCart, Utensils, Clock, Users } from "lucide-react"
-import Link from "next/link"
+import { ShoppingCart, Search, Scan } from "lucide-react"
+import type { Food } from "@/types/order"
 
 export default function HomePage() {
+  const { items, getTotal, getTotalItems } = useCart()
   const { t, formatCurrency } = useLanguage()
-  const { items, getTotal } = useCart() // Fixed: using getTotal instead of getTotalPrice
+  const [foods, setFoods] = useState<Food[]>([])
+  const [filteredFoods, setFilteredFoods] = useState<Food[]>([])
   const [selectedCategory, setSelectedCategory] = useState("all")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [showScanner, setShowScanner] = useState(false)
   const [diningMode, setDiningMode] = useState<"dine-in" | "takeout" | "delivery">("dine-in")
-  const [foods, setFoods] = useState(foodService.getAllFoods())
 
-  const filteredFoods = selectedCategory === "all" ? foods : foods.filter((food) => food.category === selectedCategory)
+  useEffect(() => {
+    const allFoods = foodService.getAllFoods()
+    setFoods(allFoods)
+    setFilteredFoods(allFoods)
+  }, [])
 
-  const stats = {
-    totalOrders: 156,
-    revenue: 45231,
-    activeOrders: 12,
-    avgOrderTime: 18,
+  useEffect(() => {
+    let filtered = foods
+
+    // Filter by category
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter((food) => food.category === selectedCategory)
+    }
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (food) =>
+          food.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          food.nameAmharic.includes(searchTerm) ||
+          food.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          food.descriptionAmharic.includes(searchTerm),
+      )
+    }
+
+    // Only show available items
+    filtered = filtered.filter((food) => food.isAvailable)
+
+    setFilteredFoods(filtered)
+  }, [foods, selectedCategory, searchTerm])
+
+  const handleBarcodeScanned = (barcode: string) => {
+    const food = foodService.getFoodByBarcode(barcode)
+    if (food) {
+      // Add to cart logic would go here
+      console.log("Food found:", food)
+    }
+    setShowScanner(false)
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <SidebarNav />
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-
-        <div className="flex-1 flex overflow-hidden">
-          {/* Main Content */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Stats Bar */}
-            <div className="bg-white border-b p-4">
-              <div className="grid grid-cols-4 gap-4">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">{t("totalRevenue")}</CardTitle>
-                    <Utensils className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(stats.revenue)}</div>
-                    <p className="text-xs text-muted-foreground">+12% from yesterday</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-                    <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.totalOrders}</div>
-                    <p className="text-xs text-muted-foreground">+8 new orders</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Active Orders</CardTitle>
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.activeOrders}</div>
-                    <p className="text-xs text-muted-foreground">In kitchen</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Avg Order Time</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.avgOrderTime}m</div>
-                    <p className="text-xs text-muted-foreground">-2m from average</p>
-                  </CardContent>
-                </Card>
-              </div>
+    <div className="container mx-auto py-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Main Content */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold">{t("home")}</h1>
+              <p className="text-muted-foreground">
+                {filteredFoods.length} {t("available")} items
+              </p>
             </div>
-
-            {/* Controls */}
-            <div className="bg-white border-b p-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <DiningMode value={diningMode} onChange={setDiningMode} />
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <ShoppingCart className="h-3 w-3" />
-                    {items.length} items - {formatCurrency(getTotal())}
-                  </Badge>
-                </div>
-
-                <div className="flex gap-2">
-                  <Link href="/test-barcode">
-                    <Button variant="outline" size="sm">
-                      Test Barcode Scanner
-                    </Button>
-                  </Link>
-                  <Link href="/admin">
-                    <Button variant="outline" size="sm">
-                      Admin Panel
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-
-              <CategoryFilter selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
-            </div>
-
-            {/* Food Grid */}
-            <div className="flex-1 overflow-auto p-4">
-              <FoodGrid foods={filteredFoods} />
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setShowScanner(true)} className="flex items-center gap-2">
+                <Scan className="h-4 w-4" />
+                {t("search")} Barcode
+              </Button>
             </div>
           </div>
 
-          {/* Right Sidebar */}
-          <div className="w-96 bg-white border-l flex flex-col">
-            {/* Barcode Scanner */}
-            <div className="p-4 border-b">
-              <POSBarcodeScanner />
-            </div>
+          {/* Dining Mode */}
+          <DiningMode value={diningMode} onChange={setDiningMode} />
 
-            {/* Cart */}
-            <div className="flex-1 overflow-auto">
-              <Cart />
+          {/* Search and Filters */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      placeholder={`${t("search")} foods...`}
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <CategoryFilter selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Food Grid */}
+          <FoodGrid foods={filteredFoods} />
+
+          {/* Barcode Scanner Modal */}
+          {showScanner && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <h3 className="text-lg font-semibold mb-4">Scan Barcode</h3>
+                <POSBarcodeScanner onBarcodeScanned={handleBarcodeScanned} onClose={() => setShowScanner(false)} />
+              </div>
             </div>
+          )}
+        </div>
+
+        {/* Cart Sidebar */}
+        <div className="lg:col-span-1">
+          <div className="sticky top-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShoppingCart className="h-5 w-5" />
+                    {t("orders")}
+                  </div>
+                  <Badge variant="secondary">{getTotalItems()} items</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Cart />
+                <div className="mt-4 pt-4 border-t">
+                  <div className="flex justify-between items-center text-lg font-bold">
+                    <span>{t("total")}:</span>
+                    <span>{formatCurrency(getTotal())}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

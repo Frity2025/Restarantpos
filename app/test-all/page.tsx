@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FoodManagementTest } from "@/components/food-management-test"
+import { SystemTestRunner } from "@/components/system-test-runner"
 import { useLanguage } from "@/contexts/language-context"
 import { TestTube, Utensils, Camera, Package, Users, BarChart3, CheckCircle, XCircle, Clock } from "lucide-react"
 import Link from "next/link"
@@ -99,10 +100,10 @@ export default function TestAllPage() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Complete System Testing</h1>
-          <p className="text-muted-foreground">Comprehensive testing suite for all restaurant POS features</p>
+          <h1 className="text-3xl font-bold">{t("testSuite")}</h1>
+          <p className="text-muted-foreground">Comprehensive testing suite for all restaurant POS system features</p>
         </div>
         <Badge variant="outline" className="text-lg px-4 py-2">
           <TestTube className="mr-2 h-4 w-4" />
@@ -344,6 +345,9 @@ export default function TestAllPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* System Test Runner */}
+      <SystemTestRunner />
     </div>
   )
 }

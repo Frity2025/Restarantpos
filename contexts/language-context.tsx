@@ -17,7 +17,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>("en")
 
   useEffect(() => {
-    const savedLanguage = localStorage.getItem("restaurant-language") as Language
+    const savedLanguage = localStorage.getItem("restaurant-pos-language") as Language
     if (savedLanguage && (savedLanguage === "en" || savedLanguage === "am")) {
       setLanguage(savedLanguage)
     }
@@ -25,7 +25,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang)
-    localStorage.setItem("restaurant-language", lang)
+    localStorage.setItem("restaurant-pos-language", lang)
   }
 
   const t = (key: TranslationKey): string => {
@@ -34,8 +34,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const formatCurrency = (amount: number): string => {
     const formatted = new Intl.NumberFormat("en-US").format(amount)
-    const symbol = language === "am" ? "ብር" : "ETB"
-    return `${formatted} ${symbol}`
+    return language === "am" ? `${formatted} ብር` : `${formatted} ETB`
   }
 
   return (
