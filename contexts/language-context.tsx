@@ -1,12 +1,13 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useCallback } from "react"
+import { createContext, useContext, useState, useEffect } from "react"
 import { translations, type Language, type TranslationKey } from "@/lib/i18n/translations"
+import { formatCurrency } from "@/lib/utils/currency"
 
 interface LanguageContextType {
   language: Language
-  setLanguage: (language: Language) => void
+  setLanguage: (lang: Language) => void
   t: (key: TranslationKey) => string
   formatCurrency: (amount: number) => string
 }
@@ -16,24 +17,37 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>("en")
 
-  const t = useCallback(
-    (key: TranslationKey): string => {
-      return translations[language][key] || key
-    },
-    [language],
-  )
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem("language") as Language
+    if (savedLanguage && (savedLanguage === "en" || savedLanguage === "am")) {
+      setLanguage(savedLanguage)
+    }
+  }, [])
 
-  const formatCurrency = useCallback(
-    (amount: number): string => {
-      const formatted = new Intl.NumberFormat("en-US").format(amount)
-      const symbol = language === "am" ? "ብር" : "ETB"
-      return `${formatted} ${symbol}`
-    },
-    [language],
-  )
+  const handleSetLanguage = (lang: Language) => {
+    setLanguage(lang)
+    localStorage.setItem("language", lang)
+  }
+
+  const t = (key: TranslationKey): string => {
+    return translations[language][key] || key
+  }
+
+  const formatCurrencyWithLanguage = (amount: number): string => {
+    return formatCurrency(amount, language)
+  }
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, formatCurrency }}>{children}</LanguageContext.Provider>
+    <LanguageContext.Provider
+      value={{
+        language,
+        setLanguage: handleSetLanguage,
+        t,
+        formatCurrency: formatCurrencyWithLanguage,
+      }}
+    >
+      {children}
+    </LanguageContext.Provider>
   )
 }
 

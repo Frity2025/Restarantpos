@@ -3,106 +3,117 @@
 import { SystemTestRunner } from "@/components/system-test-runner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { TestTube, CheckCircle, AlertTriangle, Info } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
+import { LanguageSwitcher } from "@/components/language-switcher"
+import { ArrowLeft, TestTube } from "lucide-react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 export default function TestAllPage() {
+  const { t } = useLanguage()
+
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <TestTube className="h-8 w-8" />
-            System Test Suite
-          </h1>
-          <p className="text-muted-foreground">Comprehensive testing for all restaurant POS features</p>
-        </div>
-        <Badge variant="outline" className="text-lg px-4 py-2">
-          Test Environment
-        </Badge>
-      </div>
-
-      {/* Test Categories */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Food Management</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">4</div>
-            <p className="text-xs text-muted-foreground">CRUD operations</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Language System</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">2</div>
-            <p className="text-xs text-muted-foreground">Translation & currency</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Inventory System</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">2</div>
-            <p className="text-xs text-muted-foreground">Stock management</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Order & Barcode</CardTitle>
-            <Info className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground">Orders & scanning</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Test Runner */}
-      <SystemTestRunner />
-
-      {/* Test Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Test Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-semibold mb-2">What Gets Tested:</h4>
-              <ul className="text-sm space-y-1 text-muted-foreground">
-                <li>• Food item CRUD operations</li>
-                <li>• Search and filtering functionality</li>
-                <li>• Language switching (English ↔ Amharic)</li>
-                <li>• Currency formatting</li>
-                <li>• Inventory stock tracking</li>
-                <li>• Order creation and status updates</li>
-                <li>• Barcode generation and scanning</li>
-              </ul>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-4">
+              <Link href="/">
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to POS
+                </Button>
+              </Link>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <TestTube className="h-6 w-6" />
+                System Test Suite
+              </h1>
+              <Badge variant="secondary">v2.0</Badge>
             </div>
-            <div>
-              <h4 className="font-semibold mb-2">Test Environment:</h4>
-              <ul className="text-sm space-y-1 text-muted-foreground">
-                <li>• Uses mock data for safety</li>
-                <li>• Non-destructive testing</li>
-                <li>• Real-time progress tracking</li>
-                <li>• Detailed error reporting</li>
-                <li>• Performance timing</li>
-              </ul>
+
+            <div className="flex items-center space-x-4">
+              <LanguageSwitcher />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Test Overview */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Test Overview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">11</div>
+                <div className="text-sm text-blue-600">Total Tests</div>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">4</div>
+                <div className="text-sm text-green-600">Food Management</div>
+              </div>
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">2</div>
+                <div className="text-sm text-purple-600">Language System</div>
+              </div>
+              <div className="text-center p-4 bg-orange-50 rounded-lg">
+                <div className="text-2xl font-bold text-orange-600">5</div>
+                <div className="text-sm text-orange-600">Other Systems</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Test Categories */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Food Management Tests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-sm">
+                <li>• Add Food Item</li>
+                <li>• Search Food Items</li>
+                <li>• Update Food Item</li>
+                <li>• Delete Food Item</li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Language System Tests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-sm">
+                <li>• Switch Language (EN ↔ AM)</li>
+                <li>• Currency Formatting</li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Other System Tests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-sm">
+                <li>• Inventory Stock Levels</li>
+                <li>• Low Stock Alerts</li>
+                <li>• Create Order</li>
+                <li>• Update Order Status</li>
+                <li>• Barcode Generation</li>
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Test Runner */}
+        <SystemTestRunner />
+      </div>
     </div>
   )
 }

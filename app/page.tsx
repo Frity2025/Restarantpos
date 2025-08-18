@@ -1,150 +1,119 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
+import { useCart } from "@/contexts/cart-context"
+import { LanguageSwitcher } from "@/components/language-switcher"
+import { CategoryFilter } from "@/components/category-filter"
 import { FoodGrid } from "@/components/food-grid"
 import { Cart } from "@/components/cart"
-import { CategoryFilter } from "@/components/category-filter"
-import { DiningMode } from "@/components/dining-mode"
-import { POSBarcodeScanner } from "@/components/pos-barcode-scanner"
-import { useCart } from "@/contexts/cart-context"
-import { useLanguage } from "@/contexts/language-context"
-import { foodService } from "@/lib/food-management"
-import { ShoppingCart, Search, Scan } from "lucide-react"
-import type { Food } from "@/types/order"
+import { BarcodeInput } from "@/components/barcode-input"
+import { Search, ShoppingCart, Scan, Settings } from "lucide-react"
+import Link from "next/link"
 
 export default function HomePage() {
-  const { items, getTotal, getItemCount } = useCart() // Fixed: using getItemCount instead of getTotalItems
   const { t, formatCurrency } = useLanguage()
-  const [foods, setFoods] = useState<Food[]>([])
-  const [filteredFoods, setFilteredFoods] = useState<Food[]>([])
-  const [selectedCategory, setSelectedCategory] = useState("all")
+  const { items, getTotal, getItemCount } = useCart()
   const [searchTerm, setSearchTerm] = useState("")
-  const [showScanner, setShowScanner] = useState(false)
-  const [diningMode, setDiningMode] = useState<"dine-in" | "takeout" | "delivery">("dine-in")
-
-  useEffect(() => {
-    const allFoods = foodService.getAllFoods()
-    setFoods(allFoods)
-    setFilteredFoods(allFoods)
-  }, [])
-
-  useEffect(() => {
-    let filtered = foods
-
-    // Filter by category
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter((food) => food.category === selectedCategory)
-    }
-
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (food) =>
-          food.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          food.nameAmharic.includes(searchTerm) ||
-          food.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          food.descriptionAmharic.includes(searchTerm),
-      )
-    }
-
-    // Only show available items
-    filtered = filtered.filter((food) => food.isAvailable)
-
-    setFilteredFoods(filtered)
-  }, [foods, selectedCategory, searchTerm])
-
-  const handleBarcodeScanned = (barcode: string) => {
-    const food = foodService.getFoodByBarcode(barcode)
-    if (food) {
-      // Add to cart logic would go here
-      console.log("Food found:", food)
-    }
-    setShowScanner(false)
-  }
+  const [selectedCategory, setSelectedCategory] = useState<string>("all")
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false)
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-3 space-y-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold">{t("home")}</h1>
-              <p className="text-muted-foreground">
-                {filteredFoods.length} {t("available")} items
-              </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-2xl font-bold text-gray-900">Restaurant POS</h1>
+              <Badge variant="secondary" className="hidden sm:inline-flex">
+                v2.0
+              </Badge>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => setShowScanner(true)} className="flex items-center gap-2">
-                <Scan className="h-4 w-4" />
-                {t("search")} Barcode
-              </Button>
+
+            <div className="flex items-center space-x-4">
+              <LanguageSwitcher />
+              <Link href="/admin">
+                <Button variant="outline" size="sm">
+                  <Settings className="h-4 w-4 mr-2" />
+                  {t("admin")}
+                </Button>
+              </Link>
             </div>
           </div>
-
-          {/* Dining Mode */}
-          <DiningMode value={diningMode} onChange={setDiningMode} />
-
-          {/* Search and Filters */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input
-                      placeholder={`${t("search")} foods...`}
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <CategoryFilter selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Food Grid */}
-          <FoodGrid foods={filteredFoods} />
-
-          {/* Barcode Scanner Modal */}
-          {showScanner && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                <h3 className="text-lg font-semibold mb-4">Scan Barcode</h3>
-                <POSBarcodeScanner onBarcodeScanned={handleBarcodeScanned} onClose={() => setShowScanner(false)} />
-              </div>
-            </div>
-          )}
         </div>
+      </header>
 
-        {/* Cart Sidebar */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-6">
-            <Card>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            {/* Search and Filters */}
+            <div className="mb-6 space-y-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder={t("search")}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Dialog open={showBarcodeScanner} onOpenChange={setShowBarcodeScanner}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <Scan className="h-4 w-4 mr-2" />
+                      {t("scanBarcode")}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{t("barcodeScanner")}</DialogTitle>
+                    </DialogHeader>
+                    <BarcodeInput onClose={() => setShowBarcodeScanner(false)} />
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <CategoryFilter selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
+            </div>
+
+            {/* Food Grid */}
+            <FoodGrid searchTerm={searchTerm} selectedCategory={selectedCategory} />
+          </div>
+
+          {/* Cart Sidebar */}
+          <div className="lg:col-span-1">
+            <Card className="sticky top-4">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <span className="flex items-center gap-2">
                     <ShoppingCart className="h-5 w-5" />
-                    {t("orders")}
-                  </div>
-                  <Badge variant="secondary">{getItemCount()} items</Badge>
+                    {t("cart")}
+                  </span>
+                  <Badge variant="secondary">{getItemCount()}</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <Cart />
-                <div className="mt-4 pt-4 border-t">
-                  <div className="flex justify-between items-center text-lg font-bold">
-                    <span>{t("total")}:</span>
-                    <span>{formatCurrency(getTotal())}</span>
+
+                {items.length > 0 && (
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="flex justify-between items-center text-lg font-semibold">
+                      <span>{t("total")}:</span>
+                      <span>{formatCurrency(getTotal())}</span>
+                    </div>
+                    <Button className="w-full mt-4" size="lg">
+                      {t("checkout")}
+                    </Button>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>

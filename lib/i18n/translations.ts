@@ -7,7 +7,6 @@ export const translations = {
     employees: "Employees",
     stats: "Statistics",
     inventory: "Inventory",
-    suppliers: "Suppliers",
     tables: "Tables",
     reservations: "Reservations",
     orders: "Orders",
@@ -16,73 +15,96 @@ export const translations = {
     settings: "Settings",
 
     // Common
-    search: "Search",
     add: "Add",
     edit: "Edit",
     delete: "Delete",
     save: "Save",
     cancel: "Cancel",
-    confirm: "Confirm",
-    loading: "Loading",
-    error: "Error",
-    success: "Success",
-    warning: "Warning",
-    info: "Information",
+    search: "Search",
+    filter: "Filter",
+    total: "Total",
+    subtotal: "Subtotal",
+    tax: "Tax",
+    discount: "Discount",
+    quantity: "Quantity",
+    price: "Price",
+    name: "Name",
+    description: "Description",
+    category: "Category",
+    status: "Status",
+    date: "Date",
+    time: "Time",
 
     // Food Management
-    foodName: "Food Name",
-    description: "Description",
-    price: "Price",
-    category: "Category",
-    available: "Available",
-    unavailable: "Unavailable",
+    foodManagement: "Food Management",
     addFood: "Add Food",
     editFood: "Edit Food",
-    deleteFood: "Delete Food",
+    foodName: "Food Name",
+    foodDescription: "Food Description",
+    foodPrice: "Food Price",
+    foodCategory: "Food Category",
+    available: "Available",
+    unavailable: "Unavailable",
 
     // Categories
     appetizers: "Appetizers",
     mainCourse: "Main Course",
     desserts: "Desserts",
     beverages: "Beverages",
-    specials: "Specials",
-
-    // Order Management
-    newOrder: "New Order",
-    orderNumber: "Order Number",
-    customerName: "Customer Name",
-    orderStatus: "Order Status",
-    pending: "Pending",
-    preparing: "Preparing",
-    ready: "Ready",
-    completed: "Completed",
-    cancelled: "Cancelled",
+    salads: "Salads",
+    soups: "Soups",
 
     // Cart
     cart: "Cart",
     addToCart: "Add to Cart",
     removeFromCart: "Remove from Cart",
-    quantity: "Quantity",
-    subtotal: "Subtotal",
-    total: "Total",
+    clearCart: "Clear Cart",
     checkout: "Checkout",
 
-    // Dining
-    dineIn: "Dine In",
-    takeout: "Takeout",
-    delivery: "Delivery",
+    // Orders
+    newOrder: "New Order",
+    orderHistory: "Order History",
+    orderStatus: "Order Status",
+    pending: "Pending",
+    preparing: "Preparing",
+    ready: "Ready",
+    delivered: "Delivered",
+    cancelled: "Cancelled",
 
-    // Stats
-    totalRevenue: "Total Revenue",
-    totalOrders: "Total Orders",
-    averageOrder: "Average Order",
-    topItems: "Top Items",
+    // Kitchen
+    kitchenDisplay: "Kitchen Display",
+    orderQueue: "Order Queue",
+    prepTime: "Prep Time",
 
     // Inventory
     stockLevel: "Stock Level",
     lowStock: "Low Stock",
     outOfStock: "Out of Stock",
     reorderLevel: "Reorder Level",
+
+    // Employees
+    employeeManagement: "Employee Management",
+    addEmployee: "Add Employee",
+    employeeName: "Employee Name",
+    position: "Position",
+    salary: "Salary",
+
+    // Statistics
+    dailySales: "Daily Sales",
+    monthlySales: "Monthly Sales",
+    topItems: "Top Items",
+    revenue: "Revenue",
+
+    // Barcode
+    scanBarcode: "Scan Barcode",
+    generateBarcode: "Generate Barcode",
+    barcodeScanner: "Barcode Scanner",
+
+    // Messages
+    success: "Success",
+    error: "Error",
+    warning: "Warning",
+    info: "Information",
 
     // Currency
     currency: "ETB",
@@ -95,8 +117,7 @@ export const translations = {
     kitchen: "ኩሽና",
     employees: "ሰራተኞች",
     stats: "ስታቲስቲክስ",
-    inventory: "ዕቃ ዝርዝር",
-    suppliers: "አቅራቢዎች",
+    inventory: "ዕቃ መዝገብ",
     tables: "ጠረጴዛዎች",
     reservations: "ቦታ ማስያዝ",
     orders: "ትዕዛዞች",
@@ -105,67 +126,66 @@ export const translations = {
     settings: "ቅንብሮች",
 
     // Common
-    search: "ፈልግ",
     add: "አክል",
     edit: "አርም",
     delete: "ሰርዝ",
     save: "አስቀምጥ",
     cancel: "ሰርዝ",
-    confirm: "አረጋግጥ",
-    loading: "በመጫን ላይ",
-    error: "ስህተት",
-    success: "ተሳክቷል",
-    warning: "ማስጠንቀቂያ",
-    info: "መረጃ",
+    search: "ፈልግ",
+    filter: "አጣራ",
+    total: "ጠቅላላ",
+    subtotal: "ንዑስ ጠቅላላ",
+    tax: "ግብር",
+    discount: "ቅናሽ",
+    quantity: "መጠን",
+    price: "ዋጋ",
+    name: "ስም",
+    description: "መግለጫ",
+    category: "ምድብ",
+    status: "ሁኔታ",
+    date: "ቀን",
+    time: "ሰዓት",
 
     // Food Management
-    foodName: "የምግብ ስም",
-    description: "መግለጫ",
-    price: "ዋጋ",
-    category: "ምድብ",
-    available: "ያለ",
-    unavailable: "የሌለ",
+    foodManagement: "የምግብ አስተዳደር",
     addFood: "ምግብ አክል",
     editFood: "ምግብ አርም",
-    deleteFood: "ምግብ ሰርዝ",
+    foodName: "የምግብ ስም",
+    foodDescription: "የምግብ መግለጫ",
+    foodPrice: "የምግብ ዋጋ",
+    foodCategory: "የምግብ ምድብ",
+    available: "ይገኛል",
+    unavailable: "አይገኝም",
 
     // Categories
-    appetizers: "ማነሻ ምግቦች",
-    mainCourse: "ዋና ምግቦች",
-    desserts: "ጣፋጭ ምግቦች",
+    appetizers: "ምግብ ክፍት",
+    mainCourse: "ዋና ምግብ",
+    desserts: "ጣፋጭ ምግብ",
     beverages: "መጠጦች",
-    specials: "ልዩ ምግቦች",
-
-    // Order Management
-    newOrder: "አዲስ ትዕዛዝ",
-    orderNumber: "የትዕዛዝ ቁጥር",
-    customerName: "የደንበኛ ስም",
-    orderStatus: "የትዕዛዝ ሁኔታ",
-    pending: "በመጠባበቅ ላይ",
-    preparing: "በዝግጅት ላይ",
-    ready: "ዝግጁ",
-    completed: "ተጠናቋል",
-    cancelled: "ተሰርዟል",
+    salads: "ሰላጣ",
+    soups: "ሾርባ",
 
     // Cart
     cart: "ጋሪ",
     addToCart: "ወደ ጋሪ አክል",
     removeFromCart: "ከጋሪ አስወግድ",
-    quantity: "መጠን",
-    subtotal: "ንዑስ ድምር",
-    total: "ድምር",
+    clearCart: "ጋሪ አጽዳ",
     checkout: "ክፍያ",
 
-    // Dining
-    dineIn: "በቤት ውስጥ",
-    takeout: "ይዘው መሄድ",
-    delivery: "ማድረስ",
+    // Orders
+    newOrder: "አዲስ ትዕዛዝ",
+    orderHistory: "የትዕዛዝ ታሪክ",
+    orderStatus: "የትዕዛዝ ሁኔታ",
+    pending: "በመጠባበቅ ላይ",
+    preparing: "በዝግጅት ላይ",
+    ready: "ዝግጁ",
+    delivered: "ተላልፏል",
+    cancelled: "ተሰርዟል",
 
-    // Stats
-    totalRevenue: "አጠቃላይ ገቢ",
-    totalOrders: "አጠቃላይ ትዕዛዞች",
-    averageOrder: "አማካይ ትዕዛዝ",
-    topItems: "ተወዳጅ ምግቦች",
+    // Kitchen
+    kitchenDisplay: "የኩሽና ማሳያ",
+    orderQueue: "የትዕዛዝ ወረፋ",
+    prepTime: "የዝግጅት ሰዓት",
 
     // Inventory
     stockLevel: "የአክሲዮን ደረጃ",
@@ -173,11 +193,35 @@ export const translations = {
     outOfStock: "አክሲዮን አልቋል",
     reorderLevel: "እንደገና የማዘዝ ደረጃ",
 
+    // Employees
+    employeeManagement: "የሰራተኛ አስተዳደር",
+    addEmployee: "ሰራተኛ አክል",
+    employeeName: "የሰራተኛ ስም",
+    position: "ቦታ",
+    salary: "ደመወዝ",
+
+    // Statistics
+    dailySales: "ዕለታዊ ሽያጭ",
+    monthlySales: "ወርሃዊ ሽያጭ",
+    topItems: "ከፍተኛ እቃዎች",
+    revenue: "ገቢ",
+
+    // Barcode
+    scanBarcode: "ባርኮድ ስካን",
+    generateBarcode: "ባርኮድ ፍጠር",
+    barcodeScanner: "ባርኮድ ስካነር",
+
+    // Messages
+    success: "ተሳክቷል",
+    error: "ስህተት",
+    warning: "ማስጠንቀቂያ",
+    info: "መረጃ",
+
     // Currency
     currency: "ብር",
     currencySymbol: "ብር",
   },
 }
 
+export type Language = "en" | "am"
 export type TranslationKey = keyof typeof translations.en
-export type Language = keyof typeof translations

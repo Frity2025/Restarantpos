@@ -1,11 +1,17 @@
-export function formatCurrency(amount: number, language: "en" | "am" = "en"): string {
-  const formatted = new Intl.NumberFormat("en-US").format(amount)
-  const symbol = language === "am" ? "ብር" : "ETB"
-  return `${formatted} ${symbol}`
+import type { Language } from "@/lib/i18n/translations"
+
+export function formatCurrency(amount: number, language: Language = "en"): string {
+  const formattedAmount = new Intl.NumberFormat("en-US").format(amount)
+
+  if (language === "am") {
+    return `${formattedAmount} ብር`
+  }
+
+  return `${formattedAmount} ETB`
 }
 
-export function parseCurrency(currencyString: string): number {
+export function parseCurrency(value: string): number {
   // Remove currency symbols and parse
-  const cleaned = currencyString.replace(/[^\d.-]/g, "")
-  return Number.parseFloat(cleaned) || 0
+  const cleanValue = value.replace(/[^\d.-]/g, "")
+  return Number.parseFloat(cleanValue) || 0
 }
