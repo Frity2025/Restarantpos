@@ -1,36 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Light mode */
+    --background: 0 0% 98%;
+    --foreground: 210 15% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 210 15% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 210 15% 15%;
 
-    --primary: 142.1 76.2% 36.3%;
-    --primary-foreground: 355.7 100% 97.3%;
+    /* Primary: Rich gold/amber */
+    --primary: 45 100% 52%;
+    --primary-foreground: 210 15% 15%;
 
-    --secondary: 142.1 76.2% 36.3%;
-    --secondary-foreground: 355.7 100% 97.3%;
+    /* Secondary: Warm cream */
+    --secondary: 45 80% 88%;
+    --secondary-foreground: 210 15% 15%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 8% 80%;
+    --muted-foreground: 210 8% 40%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 45 100% 52%;
+    --accent-foreground: 210 15% 15%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 142.1 76.2% 36.3%;
+    --border: 210 8% 88%;
+    --input: 210 8% 95%;
+    --ring: 45 100% 52%;
+  }
+
+  .dark {
+    --background: 210 15% 12%;
+    --foreground: 45 80% 88%;
+
+    --card: 210 15% 18%;
+    --card-foreground: 45 80% 88%;
+
+    --popover: 210 15% 18%;
+    --popover-foreground: 45 80% 88%;
+
+    --muted: 210 15% 35%;
+    --muted-foreground: 45 40% 70%;
+
+    --accent: 45 100% 52%;
+    --accent-foreground: 210 15% 15%;
+
+    --border: 210 15% 28%;
+    --input: 210 15% 22%;
   }
 }
 
@@ -38,17 +63,24 @@
   * {
     @apply border-border;
   }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground;
+    font-family: "Noto Sans Ethiopic", "Inter", sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Playfair Display", "Noto Sans Ethiopic", serif;
+    font-weight: 700;
   }
 }
 
-/* Amharic font adjustments */
+/* Amharic font support */
 @font-face {
   font-family: "Noto Sans Ethiopic";
   src: url("https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;500;700&display=swap");
-}
-
-body {
-  font-family: "Noto Sans Ethiopic", sans-serif;
 }

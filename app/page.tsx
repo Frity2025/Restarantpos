@@ -24,22 +24,28 @@ export default function HomePage() {
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false)
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="sticky top-0 z-40 bg-white dark:bg-card border-b border-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-gray-900">Restaurant POS</h1>
-              <Badge variant="secondary" className="hidden sm:inline-flex">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-md">
+                <span className="text-foreground font-bold text-lg">ር</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-foreground">የባህል ምግብ ቤት</h1>
+                <p className="text-xs text-muted-foreground">Restaurant POS</p>
+              </div>
+              <Badge variant="outline" className="hidden sm:inline-flex ml-2 bg-primary/10 text-primary border-primary/20">
                 v2.0
               </Badge>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               <LanguageSwitcher />
               <Link href="/admin">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="border-primary/20 text-primary hover:bg-primary/5">
                   <Settings className="h-4 w-4 mr-2" />
                   {t("admin")}
                 </Button>
@@ -52,22 +58,22 @@ export default function HomePage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 space-y-6">
             {/* Search and Filters */}
-            <div className="mb-6 space-y-4">
+            <div className="space-y-4">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
                   <Input
                     placeholder={t("search")}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 bg-card border-border focus:border-primary focus:ring-primary/20"
                   />
                 </div>
                 <Dialog open={showBarcodeScanner} onOpenChange={setShowBarcodeScanner}>
                   <DialogTrigger asChild>
-                    <Button variant="outline">
+                    <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
                       <Scan className="h-4 w-4 mr-2" />
                       {t("scanBarcode")}
                     </Button>
@@ -85,31 +91,34 @@ export default function HomePage() {
             </div>
 
             {/* Food Grid */}
-            <FoodGrid searchTerm={searchTerm} selectedCategory={selectedCategory} />
+            <div>
+              <h2 className="text-2xl font-bold text-foreground mb-6">Available Items</h2>
+              <FoodGrid searchTerm={searchTerm} selectedCategory={selectedCategory} />
+            </div>
           </div>
 
           {/* Cart Sidebar */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-4">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
+            <Card className="sticky top-20 shadow-lg border-border bg-card">
+              <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20 rounded-t-lg">
+                <CardTitle className="flex items-center justify-between text-foreground">
                   <span className="flex items-center gap-2">
-                    <ShoppingCart className="h-5 w-5" />
+                    <ShoppingCart className="h-5 w-5 text-primary" />
                     {t("cart")}
                   </span>
-                  <Badge variant="secondary">{getItemCount()}</Badge>
+                  <Badge className="bg-primary text-primary-foreground">{getItemCount()}</Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 <Cart />
 
                 {items.length > 0 && (
-                  <div className="mt-4 pt-4 border-t">
-                    <div className="flex justify-between items-center text-lg font-semibold">
-                      <span>{t("total")}:</span>
-                      <span>{formatCurrency(getTotal())}</span>
+                  <div className="mt-6 pt-6 border-t border-border">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-foreground font-semibold">{t("total")}:</span>
+                      <span className="text-2xl font-bold text-primary">{formatCurrency(getTotal())}</span>
                     </div>
-                    <Button className="w-full mt-4" size="lg">
+                    <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-6">
                       {t("checkout")}
                     </Button>
                   </div>
